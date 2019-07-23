@@ -251,6 +251,33 @@ function AddCommentToPR (endpointURL, commentText) {
 	});
 }
 
+/* Call to close a pull request */
+function ClosePullRequest (lockIssueEndpointURL) {
+
+	// input should be:    jsonBody.pull_request.issue_url + "/lock";
+	// e.g. https://api.github.com/repos/Codertocat/Hello-World/issues/2
+
+	request.put({
+		url: lockIssueEndpointURL,
+		headers: {
+			"Authorization": "token "+ GITHUB_USER_TOKEN,
+			"User-Agent": GITHUB_USER_AGENT,
+			"content-type" : "application/json"
+		},
+		json: true,
+		body: {
+			"locked": true,
+  			"active_lock_reason": "resolved"
+		},
+	},
+	// Handle Github response
+	function(error, response, body){
+		if (response.statusCode != 200) {
+			console.log("Something went wrong adding a comment.");
+		}
+	});
+}
+
 function MergePullRequest (branchName) {
 
 	// send request to merge branch into master
