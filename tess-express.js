@@ -33,7 +33,7 @@ const WEBHOOK_PUSH = "/webhooks/push";
 const GITHUB_USER_TOKEN = "072d3445cf3bc85d165e85b19f6a40fa55fccef2";
 const GITHUB_USER_AGENT = "TESS";
 const GITHUB_USER = "transparent-enclave";
-const GITHUB_WEBHOOK_SECRET = "";
+const GITHUB_WEBHOOK_SECRET = "7bef78260ea8801735186b374529fc297196fee1";
 
 app.post(EP_CREATE_REPO, function (req, res) {
 	console.log("\n\n\n\n\n\n\n\n\n\n");
@@ -313,7 +313,7 @@ function VerifyCommitSignature (commit, sig) {
 }
 
 function checkMAC(req) {
-	let sig = "sha1=" + crypto.createHmac('sha1', GITHUB_WEBHOOK_SECRET).update(req.body).digest('hex');
+	var sig = "sha1=" + crypto.createHmac('sha1', GITHUB_WEBHOOK_SECRET).update(req.body).digest('hex');
 	if (req.headers['x-hub-signature'] != sig)
 	{
 		console.log("Rejected webhook due to x-hub-signature "+req.headers["x-hub-signature"]+" not matching "+sig)
