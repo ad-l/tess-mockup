@@ -16,9 +16,15 @@ var commits = {}
 
 // Endpoints
 const GITHUB_API_URL = "https://api.github.com";
+
+// Repo related operations
 const EP_CREATE_REPO = "/user/repos";
 const EP_DELETE_REPO = "/repos/:owner/:repo";
 const EP_EDIT_REPO = "/repos/:owner/:repo";
+
+// Collaborator operations
+const EP_ADD_COLLAB = "/repos/:owner/:repo/collaborators/:username";
+const EP_REMOVE_COLLAB = "/repos/:owner/:repo/collaborators/:username";
 
 // Github User
 GITHUB_USER_TOKEN = "072d3445cf3bc85d165e85b19f6a40fa55fccef2";
@@ -110,6 +116,42 @@ app.patch(EP_EDIT_REPO, function (req, res) {
                 console.log("Status code: " + response.statusCode);
                 if (response.statusCode == 200) {
                     console.log("Successfully updated.");
+                    res.send(body);
+                }
+                console.log("Github response body:")
+                console.log(body);
+            }
+        });
+})
+
+app.put(EP_ADD_COLLAB, function (req, res) {
+    console.log(req);
+    console.log("Add collaborator request received. Owner: " + req.params.owner + ", repo: " + req.params.repo +
+                ", username: " + req.params.username);
+    console.log("Body: ");
+    console.log(req.body);
+    request.put({
+        url: "https://api.github.com" + EP_ADD_COLLAB.replace(":owner", req.params.owner).replace(":repo", req.params.repo)
+                                                    .replace(":username", req.params.username),
+        headers: {
+            "Authorization": "token " + GITHUB_USER_TOKEN,
+            "User-Agent": GITHUB_USER_AGENT,
+            "content-type": "application/json"
+        },
+    },
+        // Handle Github response
+        function (error, response, body) {
+            if (error) {
+                console.log("Error occured:");
+                console.log(error);
+                res.send(body);
+            } else {
+                console.log("Status code: " + response.statusCode);
+                if (response.statusCode == 201) {
+                    console.log("Successfully added collaborator.");
+                    res.send(body);
+                } else if (response.statusCode == 204) {
+                    console.log("Already a collaborator.");
                     res.send(body);
                 }
                 console.log("Github response body:")
