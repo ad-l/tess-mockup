@@ -134,6 +134,7 @@ app.patch(EP_EDIT_REPO, function (req, res) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Webhook Endpoints
 
+/* Called when new pull request is made */
 function new_pull_request(req, res)
 {
 	var jsonBody = JSON.parse(req.body);
@@ -215,7 +216,16 @@ function new_pull_request(req, res)
 	});
 }
 
-/* Called when new pull request is made */
+/* Called when a new review is added */
+function new_review_request(req, res) {
+
+}
+
+/* Called when commits are pushed */
+function new_push_request(req, res) {
+
+}
+
 app.post(WEBHOOK_PATH, function (req, res) {
   if(!checkMAC(req)){
 		res.write("Invalid Webhook MAC.");
@@ -226,6 +236,12 @@ app.post(WEBHOOK_PATH, function (req, res) {
 		case "pull_request":
 		  new_pull_request(req, res);
 			break;
+		case "pull_request_review":
+		  new_review_request(req, res);
+		    break;
+		case "push":
+		  new_push_request(req, res);
+		    break;
 		default:
 		  console.log("Ignoring event of type "+req.headers["x-github-event"])
 		  res.write("Unknown event type.")
