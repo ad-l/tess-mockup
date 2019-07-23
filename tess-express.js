@@ -139,6 +139,7 @@ function new_pull_request(req, res)
 	var jsonBody = JSON.parse(req.body);
 	var issueCommentEndpointURL = jsonBody.pull_request.issue_url + "/comments";
 	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
+	var lockIssueEndpointURL = jsonBody.pull_request.issue_url + "/lock";
 	// commitsEndpointUrl is in the form:
 	// https://api.github.com/repos/Codertocat/Hello-World/pulls/2/commits
 
@@ -157,6 +158,7 @@ function new_pull_request(req, res)
 	// Check the pull request has some required reviewers
 	if (jsonBody.pull_request.requested_reviewers.length == 0) {
 		res.write("PR needs to have some required reviews. Ingoring this PR.");
+		ClosePullRequest(lockIssueEndpointURL);
 		AddCommentToPR(issueCommentEndpointURL, "This PR has been setup incorrectly so will be ignored. It needs to have at least 1 reviewer.");
 		res.end();
 	}
@@ -187,6 +189,7 @@ function new_pull_request(req, res)
 					// commit not signed
 					res.write("Commit not signed! Ignoring this pull request.");
 					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. All of the commits should have been signed");
+					ClosePullRequest(lockIssueEndpointURL);
 					res.end();
 				}
 
@@ -196,6 +199,7 @@ function new_pull_request(req, res)
 				if (!VerifyCommitSignature(commits[i][0], signature)) {
 					res.write("Commit signature bad! Ignoring this pull request.");
 					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. One of the commit signatures is not valid.");
+					ClosePullRequest(lockIssueEndpointURL);
 					res.end();
 				}
 
