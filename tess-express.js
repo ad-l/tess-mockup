@@ -202,7 +202,6 @@ function new_pull_request(req, res)
 
 				// If build succeeds, need to add hash to PR as comment
 				// AddCommentToPR(issueCommentEndpointURL, "Build Hash: " + ... );
-
 			}
 			res.write(response);
 			res.end()
@@ -217,12 +216,12 @@ app.post(WEBHOOK_PATH, function (req, res) {
 		res.end();
 		return;
 	}
-  switch(req.headers["X-GitHub-Event"]){
+  switch(req.headers["x-github-event"]){
 		case "pull":
 		  new_pull_request(req, res);
 			break;
 		default:
-		  console.log("Ignoring event of type "+req.headers["X-GitHub-Event"])
+		  console.log("Ignoring event of type "+req.headers["x-github-event"])
 		  res.write("Unknown event type.")
 			res.end()
 	}
