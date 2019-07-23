@@ -20,6 +20,8 @@ var users = {}
 var repositories = {}
 var members = {}
 var commits = {}
+var builds = {}
+var releases = {}
 
 // Endpoints
 const GITHUB_API_URL = "https://api.github.com";
