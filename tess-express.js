@@ -226,6 +226,8 @@ function new_review_request(req, res) {
 
 	var requiredReviewers = jsonBody.pull_request.requested_reviewers;
 	var reviewer = jsonBody.review.user.login;
+	var reviewCommitId = jsonBody.review.commit_id;
+	var pullRequestLatestCommitId = jsonBody.pull_request.head.sha;
 
 	// don't check the 'action' because we want to consider all three: 'submitted', 'edited', 'dismissed'
 
@@ -259,8 +261,15 @@ function new_review_request(req, res) {
 		return;
 	}
 
-	// 1. check the review is for the latest commit
-	// 2. check all the required reviews have been provied
+	// Check review is for latest commit
+	if (reviewCommitId != pullRequestLatestCommitId) {
+		res.write("Review does not cover the latest commit(s). Ignoring review.");
+		res.end();
+		return;
+	}
+
+	
+	// check all the required reviews have been provied
 	//    (checking they cover all the commits, not just older ones)
 	//     if they have then build
 	//        comment build summary
