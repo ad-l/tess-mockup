@@ -1,6 +1,7 @@
 // Routing
 const express = require('express')
 var app = express()
+app.use(express.json())
 const port = 8000
 
 // Github Requests
@@ -24,6 +25,7 @@ const WEBHOOK_NEWREVIEW = "/webhooks/review";
 // Github User
 GITHUB_USER_TOKEN = "072d3445cf3bc85d165e85b19f6a40fa55fccef2";
 GITHUB_USER_AGENT = "TESS";
+GITHUB_USER = "transparent-enclave";
 
 app.post(EP_CREATE_REPO, function (req, res) {
 	console.log("\n\n\n\n\n\n\n\n\n\n");
@@ -57,15 +59,65 @@ app.post(EP_CREATE_REPO, function (req, res) {
 })
 
 app.delete(EP_DELETE_REPO, function (req, res) {
-	console.log(req);
-	console.log("Delete repo request received. Owner: " + req.params.owner + ", name: " + req.params.repo);
-	res.send("OK");
+    console.log(req);
+    console.log("Delete repo request received. Owner: " + req.params.owner + ", name: " + req.params.repo);
+    request.delete({
+        url: "https://api.github.com" + EP_DELETE_REPO.replace(":owner", req.params.owner).replace(":repo", req.params.repo),
+        headers: {
+            "Authorization": "token " + GITHUB_USER_TOKEN,
+            "User-Agent": GITHUB_USER_AGENT,
+            "content-type": "application/json"
+        },
+    },
+        // Handle Github response
+        function (error, response, body) {
+            if (error) {
+                console.log("Error occured:");
+                console.log(error);
+                res.send(body);
+            } else {
+                console.log("Status code: " + response.statusCode);
+                if (response.statusCode == 204) {
+                    console.log("Successfully deleted.");
+                    res.send(body);
+                }
+                console.log("Github response body:")
+                console.log(body);
+            }
+        });
+
 })
 
 app.patch(EP_EDIT_REPO, function (req, res) {
-	console.log(req);
-	console.log("Edit repo request received. Owner: " + req.params.owner + ", name: " + req.params.repo);
-	res.send("OK");
+    console.log(req);
+    console.log("Edit repo request received. Owner: " + req.params.owner + ", name: " + req.params.repo);
+    console.log("Body: ");
+    console.log(req.body);
+    request.patch({
+        url: "https://api.github.com" + EP_EDIT_REPO.replace(":owner", req.params.owner).replace(":repo", req.params.repo),
+        headers: {
+            "Authorization": "token " + GITHUB_USER_TOKEN,
+            "User-Agent": GITHUB_USER_AGENT,
+            "content-type": "application/json"
+        },
+        body: JSON.stringify(req.body),
+    },
+        // Handle Github response
+        function (error, response, body) {
+            if (error) {
+                console.log("Error occured:");
+                console.log(error);
+                res.send(body);
+            } else {
+                console.log("Status code: " + response.statusCode);
+                if (response.statusCode == 200) {
+                    console.log("Successfully updated.");
+                    res.send(body);
+                }
+                console.log("Github response body:")
+                console.log(body);
+            }
+        });
 })
 
 
