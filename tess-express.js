@@ -140,7 +140,7 @@ function new_pull_request(req, res)
 	var jsonBody = JSON.parse(req.body);
 	var issueCommentEndpointURL = jsonBody.pull_request.issue_url + "/comments";
 	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
-	var lockIssueEndpointURL = jsonBody.pull_request.issue_url + "/lock";
+	var issueEndpointURL = jsonBody.pull_request.issue_url;
 
 	// filter out webhook calls which are not for opening the request
 	if (jsonBody.action != "opened") {
@@ -160,7 +160,7 @@ function new_pull_request(req, res)
 	if (jsonBody.pull_request.requested_reviewers.length == 0) {
 		res.write("PR needs to have some required reviews. Ingoring this PR.");
 		AddCommentToPR(issueCommentEndpointURL, "This PR has been setup incorrectly so will be ignored. It needs to have at least 1 reviewer.");
-		ClosePullRequest(lockIssueEndpointURL);
+		ClosePullRequest(issueEndpointURL);
 		res.end();
 		return;
 	}
@@ -178,33 +178,32 @@ function new_pull_request(req, res)
 			var commits = JSON.parse(body);
 			// loop through the commits on this pull request
 			for (var i = 0; i < commits.length; i++) {
-
+/*
 				var isVerified = commits[i].commit.verified;
 				if (!isVerified) {
 					// commit not signed
 					res.write("Commit not signed! Ignoring this pull request.");
 					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. All of the commits should have been signed");
-					ClosePullRequest(lockIssueEndpointURL);
+					ClosePullRequest(issueEndpointURL);
 					res.end();
 					return;
 				}
-
+*/
 				var signature = commits[i].commit.signature;
 
 				// check the commit signature
 				if (!VerifyCommitSignature(commits[i], signature)) {
 					res.write("Commit signature bad! Ignoring this pull request.");
 					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. One of the commit signatures is not valid.");
-					ClosePullRequest(lockIssueEndpointURL);
+					ClosePullRequest(issueEndpointURL);
 					res.end();
 					return;
 				}
 
 				// Send request to build
-				CallBuild();
-
-				// If build succeeds, need to add hash to PR as comment
-				AddCommentToPR(issueCommentEndpointURL, "Build Hash: xxx");
+				RunBuild(jsonBody.pull_request);
+				res.write("A build has been queued");
+				res.end();
 			}
 			res.write(response);
 			res.end()
@@ -234,7 +233,7 @@ function new_review_request(req, res) {
 	if (jsonBody.pull_request.requested_reviewers.length == 0) {
 		res.write("PR needs to have some required reviews. Ingoring this PR.");
 		AddCommentToPR(issueCommentEndpointURL, "This PR has been setup incorrectly so will be ignored. It needs to have at least 1 reviewer.");
-		ClosePullRequest(lockIssueEndpointURL);
+		ClosePullRequest(issueEndpointURL);
 		res.end();
 		return;
 	}
@@ -260,7 +259,7 @@ function new_review_request(req, res) {
 		return;
 	}
 
-	
+
 	// check all the required reviews have been provied
 	//    (checking they cover all the commits, not just older ones)
 	//     if they have then build
@@ -329,14 +328,14 @@ function AddCommentToPR (endpointURL, commentText) {
 }
 
 /* Call to close a pull request */
-function ClosePullRequest (lockIssueEndpointURL) {
+function ClosePullRequest (issueEndpointURL) {
 
 	// input should be:    jsonBody.pull_request.issue_url + "/lock";
 	// e.g. https://api.github.com/repos/Codertocat/Hello-World/issues/2
 
 	https({
-		method: "PUT",
-		url: lockIssueEndpointURL,
+		method: "PATCH",
+		url: issueEndpointURL,
 		headers: {
 			"Authorization": "token "+ GITHUB_USER_TOKEN,
 			"User-Agent": GITHUB_USER_AGENT,
@@ -344,8 +343,7 @@ function ClosePullRequest (lockIssueEndpointURL) {
 		},
 		json: true,
 		body: {
-			"locked": true,
-  			"active_lock_reason": "resolved"
+			"state": "closed"
 		},
 	},
 	// Handle Github response
@@ -387,11 +385,8 @@ function MergePullRequest (mergeEndpointURL, branchName) {
 
 }
 
-function CallBuild () {
-
-	// send request to begin docker build
-	// async
-
+function RunBuild (info) {
+  console.dir(info);
 	return "Not Implemented";
 }
 
