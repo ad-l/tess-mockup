@@ -148,7 +148,7 @@ function new_pull_request(req, res)
 	}
 
 	// Check the pull request is for 'release' branch
-	if (jsonBody.base.ref != "release") {
+	if (jsonBody.pull_request.base.ref != "release") {
 		res.write("PR is not for the release branch. Ignoring this PR.");
 		res.end();
 	}
