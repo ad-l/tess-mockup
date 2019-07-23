@@ -21,6 +21,7 @@ const EP_DELETE_REPO = "/repos/:owner/:repo";
 const EP_EDIT_REPO = "/repos/:owner/:repo";
 const WEBHOOK_PULL = "/webhooks/pull";
 const WEBHOOK_NEWREVIEW = "/webhooks/review";
+const WEBHOOK_PUSH = "/webhooks/push";
 
 // Github User
 GITHUB_USER_TOKEN = "072d3445cf3bc85d165e85b19f6a40fa55fccef2";
@@ -213,6 +214,27 @@ app.post(WEBHOOK_NEWREVIEW, function (req, res) {
 
 	// merge immediatley after all reviews done
 
+	// 1. check the review is on a PR
+	// 2. check the pr is for 'release' branch
+	// 3. check all the required reviews have been provied
+	//    (checking they cover all the commits, not just older ones)
+	//     if they have then build
+	//        comment build summary
+	// 		  merge
+
+
+});
+
+/* Called when push is made */
+app.post(WEBHOOK_NEWREVIEW, function (req, res) {
+
+	/*
+		1. check commits are being added to a PR
+		2. check the pr is for 'release' branch
+		3. check the pr has come reviewers
+		4. check the new commits are valid (check signatures)
+			5. Add 'bad' comment if the one of the new commits is not valid
+	*/
 
 });
 
