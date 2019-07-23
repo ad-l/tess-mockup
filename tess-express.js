@@ -435,6 +435,13 @@ function new_review_request(req, res) {
 					var mergeURL = jsonBody.pull_request.issue_url + "/lock";
 					var branchName = jsonBody.pull_request.head.ref;
 					MergePullRequest(mergeURL, branchName);
+
+					var timeStamp = Math.floor(Date.now() / 1000);
+					releases.append({
+						"repository": jsonBody.repo.full_name,
+						"pull_request_number": jsonBody.pull_request.number,
+						"timestamp": timeStamp,
+					});
 				});
 			}
 			res.write(response);
