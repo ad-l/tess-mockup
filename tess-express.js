@@ -1,6 +1,6 @@
 // Routing
-const https = require("request")
-const request = require("http");
+const https = require("https")
+const request = require("request");
 const express = require('express')
 const crypto = require('crypto');
 const exec = require('child_process').exec;
@@ -26,7 +26,16 @@ const GITHUB_API_URL = "https://api.github.com";
 const EP_CREATE_REPO = "/user/repos";
 const EP_DELETE_REPO = "/repos/:owner/:repo";
 const EP_EDIT_REPO = "/repos/:owner/:repo";
+const EP_MASTER_COMMIT = "/repos/:owner/:repo/git/refs/heads/master";
 const WEBHOOK_PATH = "/webhooks";
+const EP_COMMIT = "/repos/:owner/:repo/git/commits";
+const EP_CREATE_BRANCH = "/repos/:owner/:repo/git/refs";
+const WEBHOOK_PULL = "/webhooks/pull";
+const WEBHOOK_NEWREVIEW = "/webhooks/review";
+
+// Collaborator operations
+const EP_ADD_COLLAB = "/repos/:owner/:repo/collaborators/:username";
+const EP_REMOVE_COLLAB = "/repos/:owner/:repo/collaborators/:username";
 
 // Github User
 const GITHUB_USER_TOKEN = new Buffer("YTdjZjM0NmE1NjYxODAxNDk2Mjk5NDQyY2RlNDcxYTM0ZjUzMTgyNQ==","base64").toString("ascii");
@@ -35,22 +44,21 @@ const GITHUB_USER = "transparent-enclave";
 const GITHUB_WEBHOOK_SECRET = "7bef78260ea8801735186b374529fc297196fee1";
 
 app.post(EP_CREATE_REPO, function (req, res) {
-	console.log("\n\n\n\n\n\n\n\n\n\n");
-	console.log("Add repo request received. Repo name: " + req.query.name);
+    console.log("\n\n\n\n\n\n\n\n\n\n");
+	console.log("Add repo request received. Repo name: " + req.body.name);
 
 	// Post!
 	request.post({
-		url: GITHUB_API_URL + EP_CREATE_REPO,
+		url: "https://api.github.com" + EP_CREATE_REPO,
 		headers: {
 			"Authorization": "token "+ GITHUB_USER_TOKEN,
 			"User-Agent": GITHUB_USER_AGENT,
 			"content-type" : "application/json"
 		},
-		json: true,
-		body: {
-			name: req.query.name
-		},
-	},
+        json: true,
+        // autoinit should be true to create a commit to get a sha1 hash to be used for creating a branch later
+		body: req.body,
+	}, 
 	// Handle Github response
 	function(error, response, body){
 		if (error) {
@@ -58,9 +66,56 @@ app.post(EP_CREATE_REPO, function (req, res) {
 			console.log(error);
 			res.send(body);
 		} else {
-			console.log("Github response body:")
-			console.log(body);
-			res.send(body);
+            if (response.statusCode == 201) {
+                console.log("Repo successfully created.");
+                console.log("Github response:")
+				console.log("full_name: " + body.full_name);
+                request.get({
+                    url: "https://api.github.com" + EP_MASTER_COMMIT.replace(":owner/:repo", body.full_name),
+                    headers: {
+                        "Authorization": "token "+ GITHUB_USER_TOKEN,
+                        "User-Agent": GITHUB_USER_AGENT,
+                        "content-type" : "application/json"
+					},
+					json: true,
+				},
+					function (err, resp, bdy) {
+						if (err) {
+							console.log("Error getting the master latest commit hash.");
+						} else {
+							console.log(JSON.stringify(resp) + JSON.stringify(bdy));
+							console.log("Bdy: " + JSON.stringify(resp));							
+
+							request.post({ 
+								url: "https://api.github.com" + EP_CREATE_BRANCH.replace(":owner/:repo", body.full_name),
+								headers: {
+									"Authorization": "token "+ GITHUB_USER_TOKEN,
+									"User-Agent": GITHUB_USER_AGENT,
+									"content-type" : "application/json"
+								},
+								json: true,
+								body: {
+									"ref": "refs/heads/release",
+									"sha": bdy.object.sha
+								}
+							},
+				
+								function(er, re, bd) {
+									if (er) {
+										console.log("Error creating release branch.");
+									} else {
+										console.log("Release branch successfully created.");
+										console.log(JSON.stringify(re) + JSON.stringify(bd));
+										res.send(JSON.stringify(re) + JSON.stringify(bd));			
+									}
+							});
+						}
+					}
+                );
+            } else {
+                console.log("Couldn't create repo. Status code: " + response.statusCode);
+                res.send(JSON.stringify(response) + JSON.stringify(body));
+            }
 		}
 	});
 })
