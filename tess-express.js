@@ -25,9 +25,7 @@ const GITHUB_API_URL = "https://api.github.com";
 const EP_CREATE_REPO = "/user/repos";
 const EP_DELETE_REPO = "/repos/:owner/:repo";
 const EP_EDIT_REPO = "/repos/:owner/:repo";
-const WEBHOOK_PULL = "/webhooks/pull";
-const WEBHOOK_NEWREVIEW = "/webhooks/review";
-const WEBHOOK_PUSH = "/webhooks/push";
+const WEBHOOK_PATH = "/webhooks";
 
 // Github User
 const GITHUB_USER_TOKEN = "072d3445cf3bc85d165e85b19f6a40fa55fccef2";
@@ -136,7 +134,7 @@ app.patch(EP_EDIT_REPO, function (req, res) {
 // Webhook Endpoints
 
 /* Called when new pull request is made */
-app.post(WEBHOOK_PULL, function (req, res) {
+app.post(WEBHOOK_PATH, function (req, res) {
   if(!checkMAC(req)){
 		res.write("Invalid Webhook MAC.");
 		res.end();
@@ -218,44 +216,6 @@ app.post(WEBHOOK_PULL, function (req, res) {
 		});
 	});
 });
-
-/* Called when new review is added to pull request */
-app.post(WEBHOOK_NEWREVIEW, function (req, res) {
-	if(!checkMAC(req)){
-		res.write("Invalid Webhook MAC.");
-		res.end();
-		return;
-	}
-	// merge immediatley after all reviews done
-
-	// 1. check the review is on a PR
-	// 2. check the pr is for 'release' branch
-	// 3. check all the required reviews have been provied
-	//    (checking they cover all the commits, not just older ones)
-	//     if they have then build
-	//        comment build summary
-	// 		  merge
-
-
-});
-
-/* Called when push is made */
-app.post(WEBHOOK_NEWREVIEW, function (req, res) {
-	if(!checkMAC(req)){
-		res.write("Invalid Webhook MAC.");
-		res.end();
-		return;
-	}
-	/*
-		1. check commits are being added to a PR
-		2. check the pr is for 'release' branch
-		3. check the pr has come reviewers
-		4. check the new commits are valid (check signatures)
-			5. Add 'bad' comment if the one of the new commits is not valid
-	*/
-
-});
-
 
 /* Sends request to GitHub API to add a comment to the pull request */
 function AddCommentToPR (endpointURL, commentText) {
