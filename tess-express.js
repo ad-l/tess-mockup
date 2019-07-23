@@ -29,9 +29,13 @@ const EP_CREATE_REPO = "/user/repos";
 const EP_DELETE_REPO = "/repos/:owner/:repo";
 const EP_EDIT_REPO = "/repos/:owner/:repo";
 const EP_MASTER_COMMIT = "/repos/:owner/:repo/git/refs/heads/master";
+const EP_REGISTER_WEBHOOKS = "/repos/:owner/:repo/hooks";
+const EP_PROTECT_RELEASE_BRANCH = "/repos/:owner/:repo/branches/release/protection";
 const WEBHOOK_PATH = "/webhooks";
 const EP_COMMIT = "/repos/:owner/:repo/git/commits";
 const EP_CREATE_BRANCH = "/repos/:owner/:repo/git/refs";
+// For now, we are using localhost
+const WEBHOOK_ADDRESS = "http://localhost:" + port + WEBHOOK_PATH;
 const WEBHOOK_PULL = "/webhooks/pull";
 const WEBHOOK_NEWREVIEW = "/webhooks/review";
 
@@ -108,7 +112,73 @@ app.post(EP_CREATE_REPO, function (req, res) {
 									} else {
 										console.log("Release branch successfully created.");
 										console.log(JSON.stringify(re) + JSON.stringify(bd));
-										res.send(JSON.stringify(re) + JSON.stringify(bd));			
+										res.send(JSON.stringify(re) + JSON.stringify(bd));
+										
+										// Protect release branch
+
+										request.put({
+											url: "https://api.github.com" + EP_PROTECT_RELEASE_BRANCH.replace(":owner/:repo", body.full_name),
+											headers: {
+												"Authorization": "token "+ GITHUB_USER_TOKEN,
+												"User-Agent": GITHUB_USER_AGENT,
+												"content-type" : "application/json"
+											},
+											json: true,
+											body: {
+												required_status_checks: null,
+												enforce_admins: null,
+												required_pull_request_reviews: null,
+												restrictions: {users: [body.owner.login], teams: []}
+											}						
+										}, function (e, r, b) {
+											if (e) {
+												console.log("Error protecting branch.");
+											} else {
+												// For now it gives "Only organization repositories can have users and team restrictions"
+												console.log("Protect branch response: " + JSON.stringify(r) + JSON.stringify(b));
+
+											
+												// Now register web hooks.
+												request.post({
+													url: "https://api.github.com" + EP_REGISTER_WEBHOOKS.replace(":owner/:repo", body.full_name),
+													headers: {
+														"Authorization": "token "+ GITHUB_USER_TOKEN,
+														"User-Agent": GITHUB_USER_AGENT,
+														"content-type" : "application/json"
+													},
+													json: true,
+													body: {
+														"name": "web",
+														"active": true,
+														"events": [
+														  "push",
+														  "pull_request"
+														],
+														"config": {
+														  "url": WEBHOOK_ADDRESS,
+														  "content_type": "json",
+														  "insecure_ssl": "0"
+														}
+													}
+												}, function (e, r, b) {
+													if (e) {
+														console.log("Error occured while setting webhook.")
+														console.log(e);
+														console.log(r);
+														console.log(b);
+													} else {
+														if (r.statusCode == 201) {
+															console.log("Webhooks are successfully registered. Webhook addres is " + WEBHOOK_ADDRESS);
+														} else {
+															console.log("Problem registering webhook.")
+															console.log(e);
+															console.log(r);
+															console.log(b);	
+														}
+													}
+												});
+											}
+										});
 									}
 							});
 						}
