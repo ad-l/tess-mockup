@@ -284,7 +284,7 @@ function new_review_request(req, res) {
 
 		// initialize array to record whether we've found all the reviews we need
 		var reviewsFound = [];
-		for (int i = 0; i < requiredReviewers.length; i++) { // << probably a nicer way of doing this
+		for (var i = 0; i < requiredReviewers.length; i++) { // << probably a nicer way of doing this
 			reviewsFound.push(false); 
 		}
 
@@ -335,7 +335,7 @@ function new_push_request(req, res) {
 	/*
 		1. check commits are being added to a PR
 		2. check the pr is for 'release' branch
-		3. check the pr has come reviewers
+		3. check the pr has some reviewers
 		4. check the new commits are valid (check signatures)
 			5. Add 'bad' comment if the one of the new commits is not valid
 	*/
