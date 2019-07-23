@@ -29,10 +29,7 @@ const EP_EDIT_REPO = "/repos/:owner/:repo";
 const WEBHOOK_PATH = "/webhooks";
 
 // Github User
-const GITHUB_USER_TOKEN =
-  typeof Buffer.from === "function"
-	  ? Buffer.from("YTdjZjM0NmE1NjYxODAxNDk2Mjk5NDQyY2RlNDcxYTM0ZjUzMTgyNQ==","base64").toString("ascii")
-		: new Buffer("YTdjZjM0NmE1NjYxODAxNDk2Mjk5NDQyY2RlNDcxYTM0ZjUzMTgyNQ==","base64").toString("ascii");
+const GITHUB_USER_TOKEN = new Buffer("YTdjZjM0NmE1NjYxODAxNDk2Mjk5NDQyY2RlNDcxYTM0ZjUzMTgyNQ==","base64").toString("ascii");
 const GITHUB_USER_AGENT = "TESS";
 const GITHUB_USER = "transparent-enclave";
 const GITHUB_WEBHOOK_SECRET = "7bef78260ea8801735186b374529fc297196fee1";
