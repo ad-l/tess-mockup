@@ -1,5 +1,5 @@
 // Routing
-const https = require("https")
+const https = require("request")
 const request = require("http");
 const express = require('express')
 const crypto = require('crypto');
@@ -166,7 +166,7 @@ function new_pull_request(req, res)
 	}
 
 	// send request to get the commits in this pull request
-	var cli = https.get(commitsEndpointUrl,
+	var cli = https(commitsEndpointUrl,
 		{
 			"headers": {
 				"Authorization": "token " + GITHUB_USER_TOKEN,
@@ -174,19 +174,12 @@ function new_pull_request(req, res)
 				"content-type": "application/json"
 			}
 		},
-		function(gres) {
-			gres.setEncoding('utf8');
-			var response = "";
-			gres.on('data', (chunk) => {
-				response += chunk;
-			});
-			gres.on('end', () => {
-			var commits = JSON.parse(response);
-
+		(err, gres, body) => {
+			var commits = JSON.parse(body);
 			// loop through the commits on this pull request
 			for (var i = 0; i < commits.length; i++) {
 
-				var isVerified = commits[i][0].commit.verified;
+				var isVerified = commits[i].commit.verified;
 				if (!isVerified) {
 					// commit not signed
 					res.write("Commit not signed! Ignoring this pull request.");
@@ -196,10 +189,10 @@ function new_pull_request(req, res)
 					return;
 				}
 
-				var signature = commits[i][0].commit.signature;
+				var signature = commits[i].commit.signature;
 
 				// check the commit signature
-				if (!VerifyCommitSignature(commits[i][0], signature)) {
+				if (!VerifyCommitSignature(commits[i], signature)) {
 					res.write("Commit signature bad! Ignoring this pull request.");
 					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. One of the commit signatures is not valid.");
 					ClosePullRequest(lockIssueEndpointURL);
@@ -211,11 +204,10 @@ function new_pull_request(req, res)
 				CallBuild();
 
 				// If build succeeds, need to add hash to PR as comment
-				// AddCommentToPR(issueCommentEndpointURL, "Build Hash: " + ... );
+				AddCommentToPR(issueCommentEndpointURL, "Build Hash: xxx");
 			}
 			res.write(response);
 			res.end()
-		});
 	});
 }
 
@@ -254,8 +246,9 @@ app.post(WEBHOOK_PATH, function (req, res) {
 
 /* Sends request to GitHub API to add a comment to the pull request */
 function AddCommentToPR (endpointURL, commentText) {
-	request.post({
+	https({
 		url: endpointURL,
+		method: "POST",
 		headers: {
 			"Authorization": "token "+ GITHUB_USER_TOKEN,
 			"User-Agent": GITHUB_USER_AGENT,
@@ -263,12 +256,12 @@ function AddCommentToPR (endpointURL, commentText) {
 		},
 		json: true,
 		body: {
-			"body": reviewText,
+			"body": commentText,
 		},
 	},
 	// Handle Github response
 	function(error, response, body){
-		if (response.statusCode != 200) {
+		if (error) {
 			console.log("Something went wrong adding a comment.");
 		}
 	});
@@ -280,7 +273,8 @@ function ClosePullRequest (lockIssueEndpointURL) {
 	// input should be:    jsonBody.pull_request.issue_url + "/lock";
 	// e.g. https://api.github.com/repos/Codertocat/Hello-World/issues/2
 
-	request.put({
+	https({
+		method: "PUT",
 		url: lockIssueEndpointURL,
 		headers: {
 			"Authorization": "token "+ GITHUB_USER_TOKEN,
@@ -295,8 +289,8 @@ function ClosePullRequest (lockIssueEndpointURL) {
 	},
 	// Handle Github response
 	function(error, response, body){
-		if (response.statusCode != 200) {
-			console.log("Something went wrong adding a comment.");
+		if (error) {
+			console.log("Something went wrong closing PR.");
 		}
 	});
 }
