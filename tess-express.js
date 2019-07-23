@@ -29,7 +29,7 @@ const EP_EDIT_REPO = "/repos/:owner/:repo";
 const WEBHOOK_PATH = "/webhooks";
 
 // Github User
-const GITHUB_USER_TOKEN = "072d3445cf3bc85d165e85b19f6a40fa55fccef2";
+const GITHUB_USER_TOKEN = Buffer.from("YTdjZjM0NmE1NjYxODAxNDk2Mjk5NDQyY2RlNDcxYTM0ZjUzMTgyNQ==","base64").toString("ascii");
 const GITHUB_USER_AGENT = "TESS";
 const GITHUB_USER = "transparent-enclave";
 const GITHUB_WEBHOOK_SECRET = "7bef78260ea8801735186b374529fc297196fee1";
@@ -141,8 +141,6 @@ function new_pull_request(req, res)
 	var issueCommentEndpointURL = jsonBody.pull_request.issue_url + "/comments";
 	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
 	var lockIssueEndpointURL = jsonBody.pull_request.issue_url + "/lock";
-	// commitsEndpointUrl is in the form:
-	// https://api.github.com/repos/Codertocat/Hello-World/pulls/2/commits
 
 	// filter out webhook calls which are not for opening the request
 	if (jsonBody.action != "opened") {
