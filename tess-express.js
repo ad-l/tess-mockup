@@ -3,9 +3,15 @@ const request = require("http");
 const express = require('express')
 const crypto = require('crypto');
 const exec = require('child_process').exec;
+const bodyParser = require('body-parser')
 
 var app = express()
+
+// For webhooks we need the raw body to compute the MAC
+app.use("/webhooks/*", bodyParser.text({type: '*/*'}));
 app.use(express.json())
+app.use(express.urlencoded({extended:true}))
+
 const port = 8000
 
 // Definitions of future CCF tables
@@ -27,7 +33,7 @@ const WEBHOOK_PUSH = "/webhooks/push";
 const GITHUB_USER_TOKEN = "072d3445cf3bc85d165e85b19f6a40fa55fccef2";
 const GITHUB_USER_AGENT = "TESS";
 const GITHUB_USER = "transparent-enclave";
-const GITHUB_WEBHOOK_SECRETG = "";
+const GITHUB_WEBHOOK_SECRET = "";
 
 app.post(EP_CREATE_REPO, function (req, res) {
 	console.log("\n\n\n\n\n\n\n\n\n\n");
@@ -132,12 +138,16 @@ app.patch(EP_EDIT_REPO, function (req, res) {
 /* Called when new pull request is made */
 app.post(WEBHOOK_PULL, function (req, res) {
 	let sig = "sha1=" + crypto.createHmac('sha1', GITHUB_WEBHOOK_SECRET).update(req.body).digest('hex');
-	if (req.headers['x-hub-signature'] == sig) {
+	if (req.headers['x-hub-signature'] != sig)
+  {
+		console.log("Rejected webhook due to x-hub-signature "+req.headers["x-hub-signature"]+" not matching "+sig)
+		res.write("Invalid Webhook MAC.");
+		res.end();
+		return;
+	}
 
 	var jsonBody = JSON.parse(req.body);
-
 	var issueCommentEndpointURL = jsonBody.pull_request.issue_url + "/comments";
-
 	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
 	// commitsEndpointUrl is in the form:
 	// https://api.github.com/repos/Codertocat/Hello-World/pulls/2/commits
