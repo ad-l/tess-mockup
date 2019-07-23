@@ -282,15 +282,35 @@ function ClosePullRequest (lockIssueEndpointURL) {
 	});
 }
 
-function MergePullRequest (branchName) {
+/* Call to merge a pull request into release */
+function MergePullRequest (mergeEndpointURL, branchName) {
+
+	// input should be:    jsonBody.pull_request.issue_url + "/lock";
+	// e.g. https://api.github.com/repos/Codertocat/Hello-World/merges
 
 	// send request to merge branch into release
 	// github has commit signing key so signs the merge commit
+	request.put({
+		url: mergeEndpointURL,
+		headers: {
+			"Authorization": "token "+ GITHUB_USER_TOKEN,
+			"User-Agent": GITHUB_USER_AGENT,
+			"content-type" : "application/json"
+		},
+		json: true,
+		body: {
+			"base": "release",
+			"head": branchName,
+			"commit_message": "Merging '" + branchName + "'' into 'release'"
+		},
+	},
+	// Handle Github response
+	function(error, response, body){
+		if (response.statusCode != 200) {
+			console.log("Something went wrong when merging.");
+		}
+	});
 
-	// POST /repos/:owner/:repo/merges
-	// https://developer.github.com/v3/repos/merging/
-
-	return "Not Implemented";
 }
 
 function CallBuild () {
