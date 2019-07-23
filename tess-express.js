@@ -217,7 +217,7 @@ app.post(WEBHOOK_PATH, function (req, res) {
 		return;
 	}
   switch(req.headers["x-github-event"]){
-		case "pull":
+		case "pull_request":
 		  new_pull_request(req, res);
 			break;
 		default:
