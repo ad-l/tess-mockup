@@ -148,12 +148,14 @@ function new_pull_request(req, res)
 	if (jsonBody.action != "opened") {
 		res.write("Not interested in this Event. Only accept Pull Request opened events.");
 		res.end();
+		return;
 	}
 
 	// Check the pull request is for 'release' branch
 	if (jsonBody.pull_request.head.ref != "release") {
 		res.write("PR is not for the release branch. Ignoring this PR.");
 		res.end();
+		return;
 	}
 
 	// Check the pull request has some required reviewers
@@ -162,6 +164,7 @@ function new_pull_request(req, res)
 		AddCommentToPR(issueCommentEndpointURL, "This PR has been setup incorrectly so will be ignored. It needs to have at least 1 reviewer.");
 		ClosePullRequest(lockIssueEndpointURL);
 		res.end();
+		return;
 	}
 
 	// send request to get the commits in this pull request
@@ -192,6 +195,7 @@ function new_pull_request(req, res)
 					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. All of the commits should have been signed");
 					ClosePullRequest(lockIssueEndpointURL);
 					res.end();
+					return;
 				}
 
 				var signature = commits[i][0].commit.signature;
@@ -202,6 +206,7 @@ function new_pull_request(req, res)
 					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. One of the commit signatures is not valid.");
 					ClosePullRequest(lockIssueEndpointURL);
 					res.end();
+					return;
 				}
 
 				// Send request to build
@@ -227,7 +232,7 @@ function new_push_request(req, res) {
 }
 
 app.post(WEBHOOK_PATH, function (req, res) {
-  if(!checkMAC(req)){
+  if(!checkMAC(req)) {
 		res.write("Invalid Webhook MAC.");
 		res.end();
 		return;
