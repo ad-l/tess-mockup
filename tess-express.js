@@ -1,12 +1,12 @@
 // Routing
+const request = require("http");
 const express = require('express')
+const crypto = require('crypto');
+const exec = require('child_process').exec;
+
 var app = express()
 app.use(express.json())
 const port = 8000
-
-// Github Requests
-var request = require("http");
-
 
 // Definitions of future CCF tables
 var users = {}
@@ -24,9 +24,10 @@ const WEBHOOK_NEWREVIEW = "/webhooks/review";
 const WEBHOOK_PUSH = "/webhooks/push";
 
 // Github User
-GITHUB_USER_TOKEN = "072d3445cf3bc85d165e85b19f6a40fa55fccef2";
-GITHUB_USER_AGENT = "TESS";
-GITHUB_USER = "transparent-enclave";
+const GITHUB_USER_TOKEN = "072d3445cf3bc85d165e85b19f6a40fa55fccef2";
+const GITHUB_USER_AGENT = "TESS";
+const GITHUB_USER = "transparent-enclave";
+const GITHUB_WEBHOOK_SECRETG = "";
 
 app.post(EP_CREATE_REPO, function (req, res) {
 	console.log("\n\n\n\n\n\n\n\n\n\n");
@@ -34,7 +35,7 @@ app.post(EP_CREATE_REPO, function (req, res) {
 
 	// Post!
 	request.post({
-		url: "https://api.github.com" + EP_CREATE_REPO,
+		url: GITHUB_API_URL + EP_CREATE_REPO,
 		headers: {
 			"Authorization": "token "+ GITHUB_USER_TOKEN,
 			"User-Agent": GITHUB_USER_AGENT,
@@ -44,7 +45,7 @@ app.post(EP_CREATE_REPO, function (req, res) {
 		body: {
 			name: req.query.name
 		},
-	}, 
+	},
 	// Handle Github response
 	function(error, response, body){
 		if (error) {
@@ -63,30 +64,30 @@ app.delete(EP_DELETE_REPO, function (req, res) {
     console.log(req);
     console.log("Delete repo request received. Owner: " + req.params.owner + ", name: " + req.params.repo);
     request.delete({
-        url: "https://api.github.com" + EP_DELETE_REPO.replace(":owner", req.params.owner).replace(":repo", req.params.repo),
+        url: GITHUB_API_URL + EP_DELETE_REPO.replace(":owner", req.params.owner).replace(":repo", req.params.repo),
         headers: {
             "Authorization": "token " + GITHUB_USER_TOKEN,
             "User-Agent": GITHUB_USER_AGENT,
             "content-type": "application/json"
         },
     },
-        // Handle Github response
-        function (error, response, body) {
-            if (error) {
-                console.log("Error occured:");
-                console.log(error);
-                res.send(body);
-            } else {
-                console.log("Status code: " + response.statusCode);
-                if (response.statusCode == 204) {
-                    console.log("Successfully deleted.");
-                    res.send(body);
-                }
-                console.log("Github response body:")
-                console.log(body);
-            }
-        });
 
+    // Handle Github response
+    function (error, response, body) {
+        if (error) {
+            console.log("Error occured:");
+            console.log(error);
+            res.send(body);
+        } else {
+            console.log("Status code: " + response.statusCode);
+            if (response.statusCode == 204) {
+                console.log("Successfully deleted.");
+                res.send(body);
+            }
+            console.log("Github response body:")
+            console.log(body);
+        }
+    });
 })
 
 app.patch(EP_EDIT_REPO, function (req, res) {
@@ -95,7 +96,7 @@ app.patch(EP_EDIT_REPO, function (req, res) {
     console.log("Body: ");
     console.log(req.body);
     request.patch({
-        url: "https://api.github.com" + EP_EDIT_REPO.replace(":owner", req.params.owner).replace(":repo", req.params.repo),
+        url: GITHUB_API_URL + EP_EDIT_REPO.replace(":owner", req.params.owner).replace(":repo", req.params.repo),
         headers: {
             "Authorization": "token " + GITHUB_USER_TOKEN,
             "User-Agent": GITHUB_USER_AGENT,
@@ -130,11 +131,13 @@ app.patch(EP_EDIT_REPO, function (req, res) {
 
 /* Called when new pull request is made */
 app.post(WEBHOOK_PULL, function (req, res) {
+	let sig = "sha1=" + crypto.createHmac('sha1', GITHUB_WEBHOOK_SECRET).update(req.body).digest('hex');
+	if (req.headers['x-hub-signature'] == sig) {
 
 	var jsonBody = JSON.parse(req.body);
-	
+
 	var issueCommentEndpointURL = jsonBody.pull_request.issue_url + "/comments";
-	
+
 	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
 	// commitsEndpointUrl is in the form:
 	// https://api.github.com/repos/Codertocat/Hello-World/pulls/2/commits
@@ -253,7 +256,7 @@ function AddCommentToPR (endpointURL, commentText) {
 		body: {
 			"body": reviewText,
 		},
-	}, 
+	},
 	// Handle Github response
 	function(error, response, body){
 		if (response.statusCode != 200) {
@@ -282,25 +285,17 @@ function CallBuild () {
 	return "Not Implemented";
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Utilities
-
 
 /*
 	commit - The commit in format returned by GitHub
 	signature - string - the commit signature
  */
-function VerifyCommitSignature (commit, signature) {
-
-	// Needs completing with signature verification
-
-	return true;
+function VerifyCommitSignature (commit, sig) {
+	console.log(commit)
+	console.log(sig)
+	return true
 }
-
-
-
-
 
 app.listen(port, () => console.log(`Listening on port ${port}!`));
