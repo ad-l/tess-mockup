@@ -195,7 +195,7 @@ function new_pull_request(req, res)
 	var jsonBody = JSON.parse(req.body);
 	var issueCommentEndpointURL = jsonBody.pull_request.issue_url + "/comments";
 	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
-	var lockIssueEndpointURL = jsonBody.pull_request.issue_url + "/lock";
+	var issueEndpointURL = jsonBody.pull_request.issue_url;
 
 	// filter out webhook calls which are not for opening the request
 	if (jsonBody.action != "opened") {
@@ -215,13 +215,13 @@ function new_pull_request(req, res)
 	if (jsonBody.pull_request.requested_reviewers.length == 0) {
 		res.write("PR needs to have some required reviews. Ingoring this PR.");
 		AddCommentToPR(issueCommentEndpointURL, "This PR has been setup incorrectly so will be ignored. It needs to have at least 1 reviewer.");
-		ClosePullRequest(lockIssueEndpointURL);
+		ClosePullRequest(issueEndpointURL);
 		res.end();
 		return;
 	}
 
 	// send request to get the commits in this pull request
-	var cli = https.get(commitsEndpointUrl,
+	var cli = https(commitsEndpointUrl,
 		{
 			"headers": {
 				"Authorization": "token " + GITHUB_USER_TOKEN,
@@ -229,58 +229,171 @@ function new_pull_request(req, res)
 				"content-type": "application/json"
 			}
 		},
-		function(gres) {
-			gres.setEncoding('utf8');
-			var response = "";
-			gres.on('data', (chunk) => {
-				response += chunk;
-			});
-			gres.on('end', () => {
-			var commits = JSON.parse(response);
-
+		(err, gres, body) => {
+			var commits = JSON.parse(body);
 			// loop through the commits on this pull request
 			for (var i = 0; i < commits.length; i++) {
-
-				var isVerified = commits[i][0].commit.verified;
+/*
+				var isVerified = commits[i].commit.verified;
 				if (!isVerified) {
 					// commit not signed
 					res.write("Commit not signed! Ignoring this pull request.");
 					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. All of the commits should have been signed");
-					ClosePullRequest(lockIssueEndpointURL);
+					ClosePullRequest(issueEndpointURL);
 					res.end();
 					return;
 				}
-
-				var signature = commits[i][0].commit.signature;
+*/
+				var signature = commits[i].commit.signature;
 
 				// check the commit signature
-				if (!VerifyCommitSignature(commits[i][0], signature)) {
+				if (!VerifyCommitSignature(commits[i], signature)) {
 					res.write("Commit signature bad! Ignoring this pull request.");
 					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. One of the commit signatures is not valid.");
-					ClosePullRequest(lockIssueEndpointURL);
+					ClosePullRequest(issueEndpointURL);
 					res.end();
 					return;
 				}
 
 				// Send request to build
-				CallBuild();
-
-				// If build succeeds, need to add hash to PR as comment
-				// AddCommentToPR(issueCommentEndpointURL, "Build Hash: " + ... );
+				RunBuild(jsonBody.pull_request);
+				res.write("A build has been queued");
+				res.end();
 			}
 			res.write(response);
 			res.end()
-		});
 	});
 }
 
 /* Called when a new review is added */
 function new_review_request(req, res) {
 
+	var jsonBody = JSON.parse(req.body);
+
+	var requiredReviewers = jsonBody.pull_request.requested_reviewers;
+	var reviewer = jsonBody.review.user.login;
+	var reviewCommitId = jsonBody.review.commit_id;
+	var pullRequestLatestCommitId = jsonBody.pull_request.head.sha;
+
+	// don't check the 'action' because we want to consider all three: 'submitted', 'edited', 'dismissed'
+
+	// Check the pull request is for 'release' branch
+	if (jsonBody.pull_request.base.ref != "release") {
+		res.write("PR is not for the release branch. Ignoring this PR.");
+		res.end();
+		return;
+	}
+
+	// Check the pull request has some required reviewers
+	if (jsonBody.pull_request.requested_reviewers.length == 0) {
+		res.write("PR needs to have some required reviews. Ingoring this PR.");
+		AddCommentToPR(issueCommentEndpointURL, "This PR has been setup incorrectly so will be ignored. It needs to have at least 1 reviewer.");
+		ClosePullRequest(issueEndpointURL);
+		res.end();
+		return;
+	}
+
+	// check the review state
+	if (jsonBody.review.state != "APPROVED") {
+		res.write("PR has not been approved with this review so wait for more commits.");
+		res.end();
+		return;
+	}
+
+	// check this reviewer is required
+	if (!requiredReviewers.includes(reviewer)) {
+		res.write("This person's review is not required, so it doesn't change anything.");
+		res.end();
+		return;
+	}
+
+	// Check review is for latest commit
+	if (reviewCommitId != pullRequestLatestCommitId) {
+		res.write("Review does not cover the latest commit(s). Ignoring review.");
+		res.end();
+		return;
+	}
+
+	// Get all reviews
+	var allReviewsURL = jsonBody.review.pull_request_url + "/reviews";
+	// e.g. https://api.github.com/repos/Codertocat/Hello-World/pulls/2/reviews
+
+	https({
+		url: allReviewsURL,
+		method: "GET",
+		headers: {
+			"Authorization": "token "+ GITHUB_USER_TOKEN,
+			"User-Agent": GITHUB_USER_AGENT,
+			"content-type" : "application/json"
+		},
+	},
+	// Handle Github response
+	(err, gres, body) => {
+		if (error) {
+			console.log("Something went wrong getting the reviews.");
+			res.write("Something went wrong getting the reviews.");
+			res.end();
+			return;
+		}
+		var reviewArr = JSON.parse(body);
+
+		// initialize array to record whether we've found all the reviews we need
+		var reviewsFound = [];
+		for (var i = 0; i < requiredReviewers.length; i++) { // << probably a nicer way of doing this
+			reviewsFound.push(false); 
+		}
+
+		// look through all the reviews
+		for (var i = 0; i < reviewArr.length; i++) {
+
+			// check the review state
+			if (reviewArr[i].state != "APPROVED") {
+				continue;
+			}
+			// Check review is for latest commit
+			if (reviewArr[i].commit_id != pullRequestLatestCommitId) {
+				continue;
+			}
+			// check the reviewer
+			if (!requiredReviewers.includes(reviewArr[i].user.login)) {
+				reviewsFound[requiredReviewers.indexOf(reviewArr[i].user.login)] = true;
+			}
+		}
+
+		// check we have reviews from all the required reviewers
+		for (var i = 0; i < reviewsFound.length; i++) {
+			if (!reviewsFound[i]) {
+				console.log("Don't have all required reviews to merge.");
+				res.write("Don't have all required reviews to merge.");
+				res.end();
+				return;
+			}
+		}
+
+		// Send request to build
+		CallBuild();
+
+		// If build succeeds, need to add hash to PR as comment
+		AddCommentToPR(issueCommentEndpointURL, "Build Hash: xxx");
+
+		// Then merge
+		var mergeURL = jsonBody.pull_request.issue_url + "/lock";
+		var branchName = jsonBody.pull_request.head.ref;
+		MergePullRequest(mergeURL, branchName);
+	});
+
 }
 
 /* Called when commits are pushed */
 function new_push_request(req, res) {
+
+	/*
+		1. check commits are being added to a PR
+		2. check the pr is for 'release' branch
+		3. check the pr has some reviewers
+		4. check the new commits are valid (check signatures)
+			5. Add 'bad' comment if the one of the new commits is not valid
+	*/
 
 }
 
@@ -309,8 +422,9 @@ app.post(WEBHOOK_PATH, function (req, res) {
 
 /* Sends request to GitHub API to add a comment to the pull request */
 function AddCommentToPR (endpointURL, commentText) {
-	request.post({
+	https({
 		url: endpointURL,
+		method: "POST",
 		headers: {
 			"Authorization": "token "+ GITHUB_USER_TOKEN,
 			"User-Agent": GITHUB_USER_AGENT,
@@ -318,25 +432,26 @@ function AddCommentToPR (endpointURL, commentText) {
 		},
 		json: true,
 		body: {
-			"body": reviewText,
+			"body": commentText,
 		},
 	},
 	// Handle Github response
 	function(error, response, body){
-		if (response.statusCode != 200) {
+		if (error) {
 			console.log("Something went wrong adding a comment.");
 		}
 	});
 }
 
 /* Call to close a pull request */
-function ClosePullRequest (lockIssueEndpointURL) {
+function ClosePullRequest (issueEndpointURL) {
 
 	// input should be:    jsonBody.pull_request.issue_url + "/lock";
 	// e.g. https://api.github.com/repos/Codertocat/Hello-World/issues/2
 
-	request.put({
-		url: lockIssueEndpointURL,
+	https({
+		method: "PATCH",
+		url: issueEndpointURL,
 		headers: {
 			"Authorization": "token "+ GITHUB_USER_TOKEN,
 			"User-Agent": GITHUB_USER_AGENT,
@@ -344,14 +459,13 @@ function ClosePullRequest (lockIssueEndpointURL) {
 		},
 		json: true,
 		body: {
-			"locked": true,
-  			"active_lock_reason": "resolved"
+			"state": "closed"
 		},
 	},
 	// Handle Github response
 	function(error, response, body){
-		if (response.statusCode != 200) {
-			console.log("Something went wrong adding a comment.");
+		if (error) {
+			console.log("Something went wrong closing PR.");
 		}
 	});
 }
@@ -387,11 +501,8 @@ function MergePullRequest (mergeEndpointURL, branchName) {
 
 }
 
-function CallBuild () {
-
-	// send request to begin docker build
-	// async
-
+function RunBuild (info) {
+  console.dir(info);
 	return "Not Implemented";
 }
 
