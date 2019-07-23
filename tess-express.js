@@ -131,6 +131,12 @@ app.patch(EP_EDIT_REPO, function (req, res) {
 app.post(WEBHOOK_PULL, function (req, res) {
 
 	var jsonBody = JSON.parse(req.body);
+	
+	var issueCommentEndpointURL = jsonBody.pull_request.issue_url + "/comments";
+	
+	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
+	// commitsEndpointUrl is in the form:
+	// https://api.github.com/repos/Codertocat/Hello-World/pulls/2/commits
 
 	// filter out webhook calls which are not for opening the request
 	if (jsonBody.action != "opened") {
@@ -147,12 +153,10 @@ app.post(WEBHOOK_PULL, function (req, res) {
 	// Check the pull request has some required reviewers
 	if (jsonBody.pull_request.requested_reviewers.length == 0) {
 		res.write("PR needs to have some required reviews. Ingoring this PR.");
+		AddCommentToPR(issueCommentEndpointURL, "This PR has been setup incorrectly so will be ignored. It needs to have at least 1 reviewer.");
 		res.end();
 	}
 
-	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
-	// commitsEndpointUrl is in the form:
-	// https://api.github.com/repos/Codertocat/Hello-World/pulls/2/commits
 
 	// send request to get the commits in this pull request
 	var cli = https.get(commitsEndpointUrl,
@@ -178,14 +182,16 @@ app.post(WEBHOOK_PULL, function (req, res) {
 				if (!isVerified) {
 					// commit not signed
 					res.write("Commit not signed! Ignoring this pull request.");
+					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. All of the commits should have been signed");
 					res.end();
 				}
 
 				var signature = commits[i][0].commit.signature;
 
 				// check the commit signature
-				if (!VerifyCommitSignature(commits[i][0], signature) {
+				if (!VerifyCommitSignature(commits[i][0], signature)) {
 					res.write("Commit signature bad! Ignoring this pull request.");
+					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. One of the commit signatures is not valid.");
 					res.end();
 				}
 
@@ -193,6 +199,7 @@ app.post(WEBHOOK_PULL, function (req, res) {
 				CallBuild();
 
 				// If build succeeds, need to add hash to PR as comment
+				// AddCommentToPR(issueCommentEndpointURL, "Build Hash: " + ... );
 
 			}
 			res.write(response);
@@ -206,18 +213,31 @@ app.post(WEBHOOK_NEWREVIEW, function (req, res) {
 
 	// merge immediatley after all reviews done
 
+
 });
 
 
+/* Sends request to GitHub API to add a comment to the pull request */
+function AddCommentToPR (endpointURL, commentText) {
 
-function AddCommentToPR (repoOwner, repoName, pullNumber, reviewText) {
-
-	var endpointURL = "https://api.github.com/repos/" + repoOwner + "/" + repoName + "/pulls/" + pullNumber + "/comments";
-
-
-
-
-	return "Not Implemented";
+	request.post({
+		url: endpointURL,
+		headers: {
+			"Authorization": "token "+ GITHUB_USER_TOKEN,
+			"User-Agent": GITHUB_USER_AGENT,
+			"content-type" : "application/json"
+		},
+		json: true,
+		body: {
+			"body": reviewText,
+		},
+	}, 
+	// Handle Github response
+	function(error, response, body){
+		if (response.statusCode != 200) {
+			console.log("Something went wrong adding a comment.");
+		}
+	});
 }
 
 function MergePullRequest (branchName) {
