@@ -137,10 +137,7 @@ app.patch(EP_EDIT_REPO, function (req, res) {
 
 /* Called when new pull request is made */
 app.post(WEBHOOK_PULL, function (req, res) {
-	let sig = "sha1=" + crypto.createHmac('sha1', GITHUB_WEBHOOK_SECRET).update(req.body).digest('hex');
-	if (req.headers['x-hub-signature'] != sig)
-  {
-		console.log("Rejected webhook due to x-hub-signature "+req.headers["x-hub-signature"]+" not matching "+sig)
+  if(!checkMAC(req)){
 		res.write("Invalid Webhook MAC.");
 		res.end();
 		return;
@@ -224,7 +221,11 @@ app.post(WEBHOOK_PULL, function (req, res) {
 
 /* Called when new review is added to pull request */
 app.post(WEBHOOK_NEWREVIEW, function (req, res) {
-
+	if(!checkMAC(req)){
+		res.write("Invalid Webhook MAC.");
+		res.end();
+		return;
+	}
 	// merge immediatley after all reviews done
 
 	// 1. check the review is on a PR
@@ -240,7 +241,11 @@ app.post(WEBHOOK_NEWREVIEW, function (req, res) {
 
 /* Called when push is made */
 app.post(WEBHOOK_NEWREVIEW, function (req, res) {
-
+	if(!checkMAC(req)){
+		res.write("Invalid Webhook MAC.");
+		res.end();
+		return;
+	}
 	/*
 		1. check commits are being added to a PR
 		2. check the pr is for 'release' branch
@@ -254,7 +259,6 @@ app.post(WEBHOOK_NEWREVIEW, function (req, res) {
 
 /* Sends request to GitHub API to add a comment to the pull request */
 function AddCommentToPR (endpointURL, commentText) {
-
 	request.post({
 		url: endpointURL,
 		headers: {
@@ -306,6 +310,16 @@ function VerifyCommitSignature (commit, sig) {
 	console.log(commit)
 	console.log(sig)
 	return true
+}
+
+function checkMAC(req) {
+	let sig = "sha1=" + crypto.createHmac('sha1', GITHUB_WEBHOOK_SECRET).update(req.body).digest('hex');
+	if (req.headers['x-hub-signature'] != sig)
+	{
+		console.log("Rejected webhook due to x-hub-signature "+req.headers["x-hub-signature"]+" not matching "+sig)
+		return false;
+	}
+	return true;
 }
 
 app.listen(port, () => console.log(`Listening on port ${port}!`));
