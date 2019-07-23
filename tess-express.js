@@ -260,12 +260,73 @@ function new_review_request(req, res) {
 		return;
 	}
 
-	
-	// check all the required reviews have been provied
-	//    (checking they cover all the commits, not just older ones)
-	//     if they have then build
-	//        comment build summary
-	// 		  merge
+	// Get all reviews
+	var allReviewsURL = jsonBody.review.pull_request_url + "/reviews";
+	// e.g. https://api.github.com/repos/Codertocat/Hello-World/pulls/2/reviews
+
+	https({
+		url: allReviewsURL,
+		method: "GET",
+		headers: {
+			"Authorization": "token "+ GITHUB_USER_TOKEN,
+			"User-Agent": GITHUB_USER_AGENT,
+			"content-type" : "application/json"
+		},
+	},
+	// Handle Github response
+	(err, gres, body) => {
+		if (error) {
+			console.log("Something went wrong getting the reviews.");
+			res.write("Something went wrong getting the reviews.");
+			res.end();
+			return;
+		}
+		var reviewArr = JSON.parse(body);
+
+		// initialize array to record whether we've found all the reviews we need
+		var reviewsFound = [];
+		for (int i = 0; i < requiredReviewers.length; i++) { // << probably a nicer way of doing this
+			reviewsFound.push(false); 
+		}
+
+		// look through all the reviews
+		for (var i = 0; i < reviewArr.length; i++) {
+
+			// check the review state
+			if (reviewArr[i].state != "APPROVED") {
+				continue;
+			}
+			// Check review is for latest commit
+			if (reviewArr[i].commit_id != pullRequestLatestCommitId) {
+				continue;
+			}
+			// check the reviewer
+			if (!requiredReviewers.includes(reviewArr[i].user.login)) {
+				reviewsFound[requiredReviewers.indexOf(reviewArr[i].user.login)] = true;
+			}
+		}
+
+		// check we have reviews from all the required reviewers
+		for (var i = 0; i < reviewsFound.length; i++) {
+			if (!reviewsFound[i]) {
+				console.log("Don't have all required reviews to merge.");
+				res.write("Don't have all required reviews to merge.");
+				res.end();
+				return;
+			}
+		}
+
+		// Send request to build
+		CallBuild();
+
+		// If build succeeds, need to add hash to PR as comment
+		AddCommentToPR(issueCommentEndpointURL, "Build Hash: xxx");
+
+		// Then merge
+		var mergeURL = jsonBody.pull_request.issue_url + "/lock";
+		var branchName = jsonBody.pull_request.head.ref;
+		MergePullRequest(mergeURL, branchName);
+	});
 
 }
 
