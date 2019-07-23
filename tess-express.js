@@ -158,8 +158,8 @@ function new_pull_request(req, res)
 	// Check the pull request has some required reviewers
 	if (jsonBody.pull_request.requested_reviewers.length == 0) {
 		res.write("PR needs to have some required reviews. Ingoring this PR.");
-		ClosePullRequest(lockIssueEndpointURL);
 		AddCommentToPR(issueCommentEndpointURL, "This PR has been setup incorrectly so will be ignored. It needs to have at least 1 reviewer.");
+		ClosePullRequest(lockIssueEndpointURL);
 		res.end();
 	}
 
@@ -284,9 +284,8 @@ function ClosePullRequest (lockIssueEndpointURL) {
 
 function MergePullRequest (branchName) {
 
-	// send request to merge branch into master
-
-	// github have commit signing key so sign the merge commit
+	// send request to merge branch into release
+	// github has commit signing key so signs the merge commit
 
 	// POST /repos/:owner/:repo/merges
 	// https://developer.github.com/v3/repos/merging/
