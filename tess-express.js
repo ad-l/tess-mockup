@@ -8,7 +8,7 @@ const bodyParser = require('body-parser')
 var app = express()
 
 // For webhooks we need the raw body to compute the MAC
-app.use("/webhooks/*", bodyParser.text({type: '*/*'}));
+app.use("/webhooks", bodyParser.text({type: '*/*'}));
 app.use(express.json())
 app.use(express.urlencoded({extended:true}))
 
@@ -133,14 +133,8 @@ app.patch(EP_EDIT_REPO, function (req, res) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Webhook Endpoints
 
-/* Called when new pull request is made */
-app.post(WEBHOOK_PATH, function (req, res) {
-  if(!checkMAC(req)){
-		res.write("Invalid Webhook MAC.");
-		res.end();
-		return;
-	}
-
+function new_pull_request(req, res)
+{
 	var jsonBody = JSON.parse(req.body);
 	var issueCommentEndpointURL = jsonBody.pull_request.issue_url + "/comments";
 	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
@@ -165,7 +159,6 @@ app.post(WEBHOOK_PATH, function (req, res) {
 		AddCommentToPR(issueCommentEndpointURL, "This PR has been setup incorrectly so will be ignored. It needs to have at least 1 reviewer.");
 		res.end();
 	}
-
 
 	// send request to get the commits in this pull request
 	var cli = https.get(commitsEndpointUrl,
@@ -215,6 +208,24 @@ app.post(WEBHOOK_PATH, function (req, res) {
 			res.end()
 		});
 	});
+}
+
+/* Called when new pull request is made */
+app.post(WEBHOOK_PATH, function (req, res) {
+  if(!checkMAC(req)){
+		res.write("Invalid Webhook MAC.");
+		res.end();
+		return;
+	}
+  switch(req.headers["X-GitHub-Event"]){
+		case "pull":
+		  new_pull_request(req, res);
+			break;
+		default:
+		  console.log("Ignoring event of type "+req.headers["X-GitHub-Event"])
+		  res.write("Unknown event type.")
+			res.end()
+	}
 });
 
 /* Sends request to GitHub API to add a comment to the pull request */
