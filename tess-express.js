@@ -165,8 +165,9 @@ function new_pull_request(req, res)
 	var cli = https.get(commitsEndpointUrl,
 		{
 			"headers": {
-				"Authorization": "token "+ token,
-				"User-Agent": "TESS",
+				"Authorization": "token " + GITHUB_USER_TOKEN,
+				"User-Agent": GITHUB_USER_AGENT,
+				"content-type": "application/json"
 			}
 		},
 		function(gres) {
