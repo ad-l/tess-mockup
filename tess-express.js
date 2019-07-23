@@ -322,4 +322,4 @@ function checkMAC(req) {
 	return true;
 }
 
-app.listen(port, () => console.log(`Listening on port ${port}!`));
+app.listen({host:"0.0.0.0",port:port}, () => console.log(`Listening on port ${port}!`));
