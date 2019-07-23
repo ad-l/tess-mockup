@@ -160,6 +160,39 @@ app.put(EP_ADD_COLLAB, function (req, res) {
         });
 })
 
+app.delete(EP_REMOVE_COLLAB, function (req, res) {
+    console.log(req);
+    console.log("Remove collaborator request received. Owner: " + req.params.owner + ", repo: " + req.params.repo +
+                ", username: " + req.params.username);
+    console.log("Body: ");
+    console.log(req.body);
+    request.delete({
+        url: "https://api.github.com" + EP_REMOVE_COLLAB.replace(":owner", req.params.owner).replace(":repo", req.params.repo)
+                                                    .replace(":username", req.params.username),
+        headers: {
+            "Authorization": "token " + GITHUB_USER_TOKEN,
+            "User-Agent": GITHUB_USER_AGENT,
+            "content-type": "application/json"
+        },
+    },
+        // Handle Github response
+        function (error, response, body) {
+            if (error) {
+                console.log("Error occured:");
+                console.log(error);
+                res.send(body);
+            } else {
+                console.log("Status code: " + response.statusCode);
+                if (response.statusCode == 204) {
+                    console.log("Collaborator deleted.");
+                    res.send(body);
+                }
+                console.log("Github response body:")
+                console.log(body);
+            }
+        });
+})
+
 
 
 app.listen(port, () => console.log(`Listening on port ${port}!`));
