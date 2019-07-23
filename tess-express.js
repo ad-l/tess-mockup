@@ -150,7 +150,7 @@ function new_pull_request(req, res)
 	}
 
 	// Check the pull request is for 'release' branch
-	if (jsonBody.pull_request.head.ref != "release") {
+	if (jsonBody.pull_request.base.ref != "release") {
 		res.write("PR is not for the release branch. Ignoring this PR.");
 		res.end();
 		return;
@@ -214,10 +214,62 @@ function new_pull_request(req, res)
 /* Called when a new review is added */
 function new_review_request(req, res) {
 
+	var jsonBody = JSON.parse(req.body);
+
+	var requiredReviewers = jsonBody.pull_request.requested_reviewers;
+	var reviewer = jsonBody.review.user.login;
+
+	// don't check the 'action' because we want to consider all three: 'submitted', 'edited', 'dismissed'
+
+	// Check the pull request is for 'release' branch
+	if (jsonBody.pull_request.base.ref != "release") {
+		res.write("PR is not for the release branch. Ignoring this PR.");
+		res.end();
+		return;
+	}
+
+	// Check the pull request has some required reviewers
+	if (jsonBody.pull_request.requested_reviewers.length == 0) {
+		res.write("PR needs to have some required reviews. Ingoring this PR.");
+		AddCommentToPR(issueCommentEndpointURL, "This PR has been setup incorrectly so will be ignored. It needs to have at least 1 reviewer.");
+		ClosePullRequest(lockIssueEndpointURL);
+		res.end();
+		return;
+	}
+
+	// check the review state
+	if (jsonBody.review.state != "APPROVED") {
+		res.write("PR has not been approved with this review so wait for more commits.");
+		res.end();
+		return;
+	}
+
+	// check this reviewer is required
+	if (!requiredReviewers.includes(reviewer)) {
+		res.write("This person's review is not required, so it doesn't change anything.");
+		res.end();
+		return;
+	}
+
+	// 1. check the review is for the latest commit
+	// 2. check all the required reviews have been provied
+	//    (checking they cover all the commits, not just older ones)
+	//     if they have then build
+	//        comment build summary
+	// 		  merge
+
 }
 
 /* Called when commits are pushed */
 function new_push_request(req, res) {
+
+	/*
+		1. check commits are being added to a PR
+		2. check the pr is for 'release' branch
+		3. check the pr has come reviewers
+		4. check the new commits are valid (check signatures)
+			5. Add 'bad' comment if the one of the new commits is not valid
+	*/
 
 }
 
