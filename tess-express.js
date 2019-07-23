@@ -259,6 +259,14 @@ function new_pull_request(req, res)
 
 				// Send request to build
 				RunBuild(jsonBody.pull_request);
+				var timeStamp = Math.floor(Date.now() / 1000);
+				builds.append({
+					"repository": jsonBody.repo.,
+					"pull_request_number": jsonBody.pull_request.head.repo.full_name,
+					"binary": "xxx",
+					"timestamp": timeStamp,
+					"container": "default"
+				});
 				res.write("A build has been queued");
 				res.end();
 			}
