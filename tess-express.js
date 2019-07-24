@@ -337,6 +337,7 @@ function new_pull_request(req, res)
 	var issueCommentEndpointURL = jsonBody.pull_request.issue_url + "/comments";
 	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
 	var issueEndpointURL = jsonBody.pull_request.issue_url;
+  var statusURL = jsonBody.pull_request.statuses_url;
 
 	// filter out webhook calls which are not for opening the request
 	if (jsonBody.action != "opened") {
@@ -374,9 +375,7 @@ function new_pull_request(req, res)
 			var pullReqCommits = JSON.parse(body);
 			// loop through the commits on this pull request
 			for (var i = 0; i < pullReqCommits.length; i++) {
-
 				var signature = pullReqCommits[i].commit.signature;
-
 				// check the commit signature
 				if (!VerifyCommitSignature(pullReqCommits[i], signature)) {
 					res.write("Commit signature bad! Ignoring this pull request.");
@@ -385,20 +384,13 @@ function new_pull_request(req, res)
 					res.end();
 					return;
 				}
-
-				// Send request to build
-				RunBuild(jsonBody.pull_request);
-				var timeStamp = Math.floor(Date.now() / 1000);
-				builds.append({
-					"repository": jsonBody.repo.full_name,
-					"pull_request_number": jsonBody.pull_request.number,
-					"binary": "xxx",
-					"timestamp": timeStamp,
-					"container": "default"
-				});
-				res.write("A build has been queued");
-				res.end();
 			}
+      // Comment on PR
+      AddCommentToPR(issueCommentEndpointURL, "This branch is protected by TESS. We have checked that all commit signatures are valid. Reviewer approval is required to merge this PR.");
+      // Set build status to pending
+      SetBuildStatus(statusURL, "pending")
+      res.write("PR recorded on TESS");
+      res.end();
 	});
 }
 
@@ -726,6 +718,30 @@ function AddCommentToPR (endpointURL, commentText) {
 	});
 }
 
+/* Sends request to GitHub API to add a comment to the pull request */
+function SetBuildStatus(endpointURL, status) {
+	request.post({
+			url: endpointURL,
+			headers: {
+				"Authorization": "token " + GITHUB_USER_TOKEN,
+				"User-Agent": GITHUB_USER_AGENT,
+				"content-type": "application/json"
+			},
+			json: true,
+			body: {
+				"state": status,
+        "description": "TESS build pending",
+        "context":"security/tess",
+			},
+		},
+		// Handle Github response
+		function(error, response, body){
+			if (error) {
+				console.log("Something went wrong adding a comment.");
+			}
+	});
+}
+
 /* Call to close a pull request */
 function ClosePullRequest (issueEndpointURL) {
 
@@ -796,9 +812,11 @@ function RunBuild (info) {
 	signature - string - the commit signature
  */
 function VerifyCommitSignature (commit, sig) {
-	console.log(commit)
-	console.log(sig)
-	return true
+	var r = commit.commit.verification;
+  if(typeof r == "object" && r.verified == true){
+    return true;
+  }
+  return false;
 }
 
 function checkMAC(req) {
