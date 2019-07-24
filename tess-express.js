@@ -471,10 +471,11 @@ function new_review_request(req, res) {
     var reviews = {};
 		// look through all the reviews
 		for (var i = reviewArr.length - 1; i >= 0; i--) {
-      if(reviews[reviewArr[i].review.user.login]){
+      if(reviews[reviewArr[i].user.login]){
         console.log("Skipping out of date review "+i);
+        continue;
       }
-      reviews[reviewArr[i].review.user.login] = true;
+      reviews[reviewArr[i].user.login] = true;
       console.log("Review "+i+": "+reviewArr[i].state+" "+(reviewArr[i].commit_id == pullRequestLatestCommitId ? "up to date" : "outdated"));
       approved = (approved
          && reviewArr[i].state == "APPROVED"
