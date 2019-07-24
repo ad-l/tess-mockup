@@ -399,8 +399,6 @@ function new_pull_request(req, res)
 				res.write("A build has been queued");
 				res.end();
 			}
-			res.write(response);
-			res.end()
 	});
 }
 
@@ -565,9 +563,6 @@ function new_review_request(req, res) {
 					commits.append(pullReqCommits[i]);
 				}
 			});
-
-			res.write(response);
-			res.end()
 		}
 	);
 }
@@ -681,8 +676,6 @@ function new_push(req, res) {
 						res.write("A build has been queued");
 						res.end();
 					}
-					res.write(response);
-					res.end()
 			});
 		}
 	);
