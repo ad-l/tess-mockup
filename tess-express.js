@@ -155,6 +155,7 @@ app.post(EP_CREATE_REPO, function (req, res) {
 														"active": true,
 														"events": [
 														  "push",
+														  "pull_request_review",
 														  "pull_request"
 														],
 														"config": {
@@ -484,17 +485,7 @@ function new_review_request(req, res) {
 			var pullReqCommits = JSON.parse(body);
 			// loop through the commits on this pull request
 			for (var i = 0; i < pullReqCommits.length; i++) {
-				/*
-				var isVerified = commits[i].commit.verified;
-				if (!isVerified) {
-					// commit not signed
-					res.write("Commit not signed! Ignoring this pull request.");
-					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. All of the commits should have been signed");
-					ClosePullRequest(issueEndpointURL);
-					res.end();
-					return;
-				}
-				*/
+
 				var signature = pullReqCommits[i].commit.signature;
 
 				// check the commit signature
@@ -655,14 +646,58 @@ function new_push(req, res) {
 				return;
 			}
 
-			// check the PR is valid
+			// Check the pull request has some required reviewers
+			if (pullRequest.requested_reviewers.length == 0) {
+				res.write("PR needs to have some required reviews. Ingoring this PR.");
+				AddCommentToPR(issueCommentEndpointURL, "This PR has been setup incorrectly so will be ignored. It needs to have at least 1 reviewer.");
+				ClosePullRequest(issueEndpointURL);
+				res.end();
+				return;
+			}
 
-			// check new commits are signed
+			var commitsEndpointUrl = pullRequest._links.commits.href;
 
-			// build
+			// send request to get the commits in this pull request
+			var cli = https(commitsEndpointUrl,
+				{
+					"headers": {
+						"Authorization": "token " + GITHUB_USER_TOKEN,
+						"User-Agent": GITHUB_USER_AGENT,
+						"content-type": "application/json"
+					}
+				},
+				(err, gres, body) => {
+					var pullReqCommits = JSON.parse(body);
+					// loop through the commits on this pull request
+					for (var i = 0; i < pullReqCommits.length; i++) {
 
-			// add comment to PR with build hash
-			
+						var signature = pullReqCommits[i].commit.signature;
+
+						// check the commit signature
+						if (!VerifyCommitSignature(pullReqCommits[i], signature)) {
+							res.write("Commit signature bad! Ignoring this pull request.");
+							AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. One of the commit signatures is not valid.");
+							ClosePullRequest(issueEndpointURL);
+							res.end();
+							return;
+						}
+
+						// Send request to build
+						RunBuild(jsonBody.pull_request);
+						var timeStamp = Math.floor(Date.now() / 1000);
+						builds.append({
+							"repository": jsonBody.repo.full_name,
+							"pull_request_number": jsonBody.pull_request.number,
+							"binary": "xxx",
+							"timestamp": timeStamp,
+							"container": "default"
+						});
+						res.write("A build has been queued");
+						res.end();
+					}
+					res.write(response);
+					res.end()
+			});			
 		}
 	);
 }
