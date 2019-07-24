@@ -362,7 +362,7 @@ function new_pull_request(req, res)
 	}
 
 	// send request to get the commits in this pull request
-	var cli = https(commitsEndpointUrl,
+	var cli = request.get(commitsEndpointUrl,
 		{
 			"headers": {
 				"Authorization": "token " + GITHUB_USER_TOKEN,
@@ -460,7 +460,7 @@ function new_review_request(req, res) {
 	// e.g. https://api.github.com/repos/Codertocat/Hello-World/pulls/2/reviews
 
 	// send request to get the commits in this pull request
-	var cli = https(commitsEndpointUrl,
+	var cli = request.get(commitsEndpointUrl,
 		{
 			"headers": {
 				"Authorization": "token " + GITHUB_USER_TOKEN,
@@ -496,9 +496,8 @@ function new_review_request(req, res) {
 				"container": "default"
 			});
 
-			https({
+			request.get({
 				url: allReviewsURL,
-				method: "GET",
 				headers: {
 					"Authorization": "token "+ GITHUB_USER_TOKEN,
 					"User-Agent": GITHUB_USER_AGENT,
@@ -597,7 +596,7 @@ function new_push(req, res) {
 	}
 
 	// get pull requests to check one exists for this branch
-	var cli = https(pullRequestUrl,
+	var cli = request.get(pullRequestUrl,
 		{
 			"headers": {
 				"Authorization": "token " + GITHUB_USER_TOKEN,
@@ -645,7 +644,7 @@ function new_push(req, res) {
 			var commitsEndpointUrl = pullRequest._links.commits.href;
 
 			// send request to get the commits in this pull request
-			var cli = https(commitsEndpointUrl,
+			var cli = request.get(commitsEndpointUrl,
 				{
 					"headers": {
 						"Authorization": "token " + GITHUB_USER_TOKEN,
@@ -714,24 +713,23 @@ app.post(WEBHOOK_PATH, function (req, res) {
 
 /* Sends request to GitHub API to add a comment to the pull request */
 function AddCommentToPR (endpointURL, commentText) {
-	https({
-		url: endpointURL,
-		method: "POST",
-		headers: {
-			"Authorization": "token "+ GITHUB_USER_TOKEN,
-			"User-Agent": GITHUB_USER_AGENT,
-			"content-type" : "application/json"
+	request.post({
+			url: endpointURL,
+			headers: {
+				"Authorization": "token " + GITHUB_USER_TOKEN,
+				"User-Agent": GITHUB_USER_AGENT,
+				"content-type": "application/json"
+			},
+			json: true,
+			body: {
+				"body": commentText,
+			},
 		},
-		json: true,
-		body: {
-			"body": commentText,
-		},
-	},
-	// Handle Github response
-	function(error, response, body){
-		if (error) {
-			console.log("Something went wrong adding a comment.");
-		}
+		// Handle Github response
+		function(error, response, body){
+			if (error) {
+				console.log("Something went wrong adding a comment.");
+			}
 	});
 }
 
@@ -741,8 +739,7 @@ function ClosePullRequest (issueEndpointURL) {
 	// input should be:    jsonBody.pull_request.issue_url + "/lock";
 	// e.g. https://api.github.com/repos/Codertocat/Hello-World/issues/2
 
-	https({
-		method: "PATCH",
+	request.patch({
 		url: issueEndpointURL,
 		headers: {
 			"Authorization": "token "+ GITHUB_USER_TOKEN,
