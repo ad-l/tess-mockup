@@ -429,7 +429,7 @@ function new_review_request(req, res) {
 	}
 
 	// check the review state
-	if (jsonBody.review.state != "APPROVED") {
+	if (jsonBody.review.state != "approved") {
 		res.write("PR has not been approved with this review so wait for more commits.");
 		res.end();
 		return;
@@ -453,114 +453,99 @@ function new_review_request(req, res) {
 	var allReviewsURL = jsonBody.review.pull_request_url + "/reviews";
 	// e.g. https://api.github.com/repos/Codertocat/Hello-World/pulls/2/reviews
 
-	// send request to get the commits in this pull request
-	var cli = request.get(commitsEndpointUrl,
-		{
-			"headers": {
-				"Authorization": "token " + GITHUB_USER_TOKEN,
-				"User-Agent": GITHUB_USER_AGENT,
-				"content-type": "application/json"
-			}
+  console.log("Checking other reviews.");
+	request.get({
+		url: allReviewsURL,
+		headers: {
+			"Authorization": "token "+ GITHUB_USER_TOKEN,
+			"User-Agent": GITHUB_USER_AGENT,
+			"content-type" : "application/json"
 		},
-		(err, gres, body) => {
-			var pullReqCommits = JSON.parse(body);
-			// loop through the commits on this pull request
-			for (var i = 0; i < pullReqCommits.length; i++) {
-
-				var signature = pullReqCommits[i].commit.signature;
-
-				// check the commit signature
-				if (!VerifyCommitSignature(pullReqCommits[i])) {
-					res.write("Commit signature bad! Ignoring this pull request.");
-					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. One of the commit signatures is not valid.");
-					ClosePullRequest(issueEndpointURL);
-					res.end();
-					return;
-				}
-			}
-
-			// Send request to build
-			RunBuild(jsonBody.pull_request);
-			var timeStamp = Math.floor(Date.now() / 1000);
-			builds.append({
-				"repository": jsonBody.repo.full_name,
-				"pull_request_number": jsonBody.pull_request.number,
-				"binary": "xxx",
-				"timestamp": timeStamp,
-				"container": "default"
-			});
-
-			request.get({
-				url: allReviewsURL,
-				headers: {
-					"Authorization": "token "+ GITHUB_USER_TOKEN,
-					"User-Agent": GITHUB_USER_AGENT,
-					"content-type" : "application/json"
-				},
-			},
-			// Handle Github response
-			(err, gres, body) => {
-				if (error) {
-					console.log("Something went wrong getting the reviews.");
-					res.write("Something went wrong getting the reviews.");
-					res.end();
-					return;
-				}
-				var reviewArr = JSON.parse(body);
-
-				// initialize array to record whether we've found all the reviews we need
-				var reviewsFound = [];
-				for (var i = 0; i < requiredReviewers.length; i++) { // << probably a nicer way of doing this
-					reviewsFound.push(false);
-				}
-
-				// look through all the reviews
-				for (var i = 0; i < reviewArr.length; i++) {
-
-					// check the review state
-					if (reviewArr[i].state != "APPROVED") {
-						continue;
-					}
-					// Check review is for latest commit
-					if (reviewArr[i].commit_id != pullRequestLatestCommitId) {
-						continue;
-					}
-					// check the reviewer
-					if (!requiredReviewers.includes(reviewArr[i].user.login)) {
-						reviewsFound[requiredReviewers.indexOf(reviewArr[i].user.login)] = true;
-					}
-				}
-
-				// check we have reviews from all the required reviewers
-				for (var i = 0; i < reviewsFound.length; i++) {
-					if (!reviewsFound[i]) {
-						console.log("Don't have all required reviews to merge.");
-						res.write("Don't have all required reviews to merge.");
-						res.end();
-						return;
-					}
-				}
-				// If build succeeds, need to add hash to PR as comment
-				AddCommentToPR(issueCommentEndpointURL, "Build Hash: xxx");
-				// Then merge
-				var mergeURL = jsonBody.pull_request.issue_url + "/lock";
-				var branchName = jsonBody.pull_request.head.ref;
-				MergePullRequest(mergeURL, branchName);
-
-				var timeStamp = Math.floor(Date.now() / 1000);
-				releases.append({
-					"repository": jsonBody.repo.full_name,
-					"pull_request_number": jsonBody.pull_request.number,
-					"timestamp": timeStamp,
-				});
-
-				// add new commits to commits table
-				for (var i = 0; i < pullReqCommits.length; i++) {
-					commits.append(pullReqCommits[i]);
-				}
-			});
+	},
+	// Handle Github response
+	(err, gres, body) => {
+		if (error) {
+			console.log("Something went wrong getting the reviews.");
+			res.write("Something went wrong getting the reviews.");
+			res.end();
+			return;
 		}
-	);
+		var reviewArr = JSON.parse(body);
+
+		// initialize array to record whether we've found all the reviews we need
+		var reviewsFound = [];
+		for (var i = 0; i < requiredReviewers.length; i++) { // << probably a nicer way of doing this
+			reviewsFound.push(false);
+		}
+
+		// look through all the reviews
+		for (var i = 0; i < reviewArr.length; i++) {
+
+			// check the review state
+			if (reviewArr[i].state != "approved") {
+				continue;
+			}
+			// Check review is for latest commit
+			if (reviewArr[i].commit_id != pullRequestLatestCommitId) {
+				continue;
+			}
+			// check the reviewer
+			if (!requiredReviewers.includes(reviewArr[i].user.login)) {
+				reviewsFound[requiredReviewers.indexOf(reviewArr[i].user.login)] = true;
+			}
+		}
+
+		// check we have reviews from all the required reviewers
+		for (var i = 0; i < reviewsFound.length; i++) {
+			if (!reviewsFound[i]) {
+				console.log("Don't have all required reviews to merge.");
+				res.write("Don't have all required reviews to merge.");
+				res.end();
+				return;
+			}
+		}
+
+    console.log("Checking if PR can be merged...")
+    request.get({url: jsonBody.pull_request.url,
+  		headers: {
+  			"Authorization": "token "+ GITHUB_USER_TOKEN,
+  			"User-Agent": GITHUB_USER_AGENT,
+  			"content-type" : "application/json"
+  		}},
+
+  	(err, gres, body) => {
+      if(err){
+        console.log("Error checking PR status");
+        console.log(err);
+        return;
+      }
+      console.dir(body);
+      /*
+      // If build succeeds, need to add hash to PR as comment
+      AddCommentToPR(issueCommentEndpointURL, "Build Hash: xxx");
+      // Then merge
+      var mergeURL = jsonBody.pull_request.issue_url + "/lock";
+      var branchName = jsonBody.pull_request.head.ref;
+      MergePullRequest(mergeURL, branchName);
+
+      var timeStamp = Math.floor(Date.now() / 1000);
+      releases.append({
+        "repository": jsonBody.repo.full_name,
+        "pull_request_number": jsonBody.pull_request.number,
+        "timestamp": timeStamp,
+      });
+
+      // add new commits to commits table
+      for (var i = 0; i < pullReqCommits.length; i++) {
+        commits.append(pullReqCommits[i]);
+      }
+      // Send request to build
+      RunBuild(jsonBody.pull_request);
+      */
+    });
+	});
+  res.write("New review processed.");
+  res.end();
 }
 
 /* Called when a push is made */
@@ -602,14 +587,9 @@ function new_push(req, res) {
 				if (pullRequests[i].state != "open") {
 					continue;
 				}
-				if (pullRequests[i].locked == "true") {
-					continue;
-				}
-
 				if (pullRequests[i].base.ref != "release") {
 					continue;
 				}
-
 				if (pullRequests[i].head.ref == branchName) {
 					foundPRForBranch = true;
 					pullRequest = pullRequests[i];
