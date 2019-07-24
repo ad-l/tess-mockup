@@ -188,6 +188,7 @@ app.post(EP_CREATE_REPO, function (req, res) {
 														],
 														"config": {
 														  "url": WEBHOOK_ADDRESS,
+														  "secret": GITHUB_WEBHOOK_SECRET,
 														  "content_type": "json",
 														  "insecure_ssl": "0"
 														}

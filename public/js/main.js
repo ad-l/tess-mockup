@@ -32,7 +32,6 @@ function AddRepo_Resp (xhrRequest) {
 	}
 }
 
-
 function DeleteRepo_Pressed () {
 	var repoName = document.getElementById("delete_repoNameInput").value;
 	var endpoint = baseAddress + "/repos/transparent-enclave/" + repoName;
