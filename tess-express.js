@@ -742,7 +742,7 @@ function RunBuild (info, reviews) {
   exec("run_build.sh "+info.head.repo.clone_url+" "+info.head.ref+" "+info.head.sha,
     function(err, stdo, stde){
       if(err) {
-        AddCommentToPR(commentURL, "TESS failed to build your changes.")
+        AddCommentToPR(commentURL, "TESS failed to build your changes. Reported error:\n```\n"+err+"\n```")
         SetBuildStatus(info.statuses_url, "error");
         return;
       }
