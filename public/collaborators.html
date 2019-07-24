@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+  <script src="js/main.js"></script> 
+
+  <title>TESS Admin Portal</title>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg" style="color: #fff; background-color: #000">
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+      <div class="navbar-nav">
+        <img style="display: inline; width: 100px; height: 20px; margin: 10px" title="Microsoft" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFUAAAASCAYAAAAqqJKOAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA+1pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTExIDc5LjE1ODMyNSwgMjAxNS8wOS8xMC0wMToxMDoyMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNSAoTWFjaW50b3NoKSIgeG1wOkNyZWF0ZURhdGU9IjIwMTgtMDUtMjVUMTE6MDY6MzEtMDc6MDAiIHhtcDpNb2RpZnlEYXRlPSIyMDE4LTA1LTI1VDE4OjA3OjI1LTA3OjAwIiB4bXA6TWV0YWRhdGFEYXRlPSIyMDE4LTA1LTI1VDE4OjA3OjI1LTA3OjAwIiBkYzpmb3JtYXQ9ImltYWdlL3BuZyIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozN0E2NTk3MzU3MDIxMUU4QkJENTgxODBEOTM5MTQwQiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozN0E2NTk3NDU3MDIxMUU4QkJENTgxODBEOTM5MTQwQiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjM3QTY1OTcxNTcwMjExRThCQkQ1ODE4MEQ5MzkxNDBCIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjM3QTY1OTcyNTcwMjExRThCQkQ1ODE4MEQ5MzkxNDBCIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+BFSh6gAABAhJREFUeNrsWGtIVFEQ3q3tQUFmKmWCj4LAyJ5EZkVaoVZUm9kDetrrh5VRBGmRYhSFYU8oqKQ0FdLE3mn9qND6YWiapVmoS0iklW72pnD7Br4Lh5vu7p+WDfbAx5wzZ869c+bMmZl7TZ3mETaD/ZadmdhkAU1zIBeSHm2wGDzN0MtjAo9R3abZbDYfYAowXD9n+scvDgcJ5/Ce0Wh80Y3MaJBoDu8C9Qw1/YE9WNPlhgbdBpIJ9JHwCKxzmVHRYpVYXAgs60bmALCY/QSgVVlzFmhyM4OGgJwAPgO7gFd0jCXAJTiBxeRCfcx4uS9e+kFRMABkoSqE+Y/gLxVPRb/JDW/+WFETuAX9TnIfD0BmAjdc4alaqwQmAWuAowp/E9AbqAImKvy+QJfOQybQ832ARqAAGAjMAuq4JhK4iM22QD4M/bmAH9ACFIP/RnneOJD5wGCgAXNZytxUkCjAmzelUJwB/Onoz6ZYIMbatR9GuhC88a4y6nlANrFRMypeLu/ezBhapjPqadJ8yh4CSdY98ztgBS4ANUAYE2855CWM7NfJH5YbAOPcBF2BcZ4uUWeBLx54DtigW3sQc9HUfy150wi1pWueesKBQSqAdifkOu3MvQOuAvFQLgIbe4z+IsAfyACC7cSwWBq0jZ7+BJgMfAV8lSu5G3gOBNCgbYzhL0nlql7E8wJBk2jQSO5vHp+zmgaVg17F+L4FSAFyeFNq6Bhy1VMVp5GbKIfVYBoUX+lEcPZ2yh3T7U+fEaNSaTFqIvCTyqbaWaddsWQcRin7pTS4meMSzB0hTzv8DPAesn8K/OX0rAjgE/mSxfdCrojjeNJ94FXxeXt5mKEMMc2UaYdMNWW+kCdhpFo8dbujLyrA4oTccXp0T+2+ZEo5TShxhrEwF0q0Y2zvuSNJn9mRURNaEGmjTqaZRvVn1g5lxo6jPmLgQMq+VhInpm0W3oChblX8i3L01gFAkVIyOWqaVwXbkfmt9LWD1RflAaRvWS+PYoxs562RKqRDJ/vXWnf8osphghGPqMfmypxYc12rZyWzSoIDZvDDort2h3QnZMZQ3sySR+LsI4zXg3ox41+mvHjhbfbTIBME9AW28kCrId/cwzutWmyH/CBX1qkGXvUCZtCzTi4T745hMnmq8BOUzajtCjP7SqBWQh7rym+SfKDDD+iQxGxvZUmlJVIry7Aohjxt7Xu+r6dWzsSb7Yo6tYSK1qrliZy6pgBbMTdRwXGKchC/sPkF8vFAbzOxLr0GDAF2qMZmDFxNw0rc9mLMzVfqVImpc2hQifN5mGtl0pHSKY7xtx+rh1zlo6WW76xT9D/G6kdq6VajIbfD4a8/m5+3U7/+jDGeX3+ev1Qeo/4/7Y8AAwAmaYsh7e3u3wAAAABJRU5ErkJggg==">
+        <a class="nav-item nav-link" style="color: white" href="index.html">|&nbsp;&nbsp;&nbsp;&nbsp;TESS Admin Portal</a>
+      </div>
+    </div>
+  </nav>
+  <main style="padding: 20px;">
+    <div class="container">
+      <div class="row">
+        <div class="col text-center">
+          <div class="btn-group btn-group-toggle" data-toggle="buttons">
+            <label class="btn btn-secondary active">
+              <input type="radio" name="options" id="option1" onchange="collabNavChange(this);" value="1" autocomplete="off"> Add Collaborator
+            </label>
+            <label class="btn btn-secondary">
+              <input type="radio" name="options" id="option3" autocomplete="off" onchange="collabNavChange(this);" value="2" autocomplete="off"> Remove Collaborator
+            </label>
+          </div>
+        </div>
+      </div>
+      <div id="buttons" style="margin-top: 40px; display: block">
+        <div id="add" style="display: block">
+          <h2>Add a Collaborator</h2>
+          <p style="margin-top: 20px;">Repo Name:</p>
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="basic-addon3">github.com/transparent-enclave/</span>
+            </div>
+            <input type="text" class="form-control" id="add_collabRepo" aria-describedby="basic-addon3">
+          </div>
+          <p style="margin-top: 20px;">Collaborator Username:</p>
+          <input type="text" class="form-control" id="add_collabUser" aria-describedby="basic-addon3">
+          <button type="button" class="btn btn-primary" style="margin-top: 30px;" onclick="AddCollaborator_Pressed()">Add Collaborator</button>
+        </div>
+          <div id="remove" style="display: none">
+            <h2>Remove a Collaborator</h2>
+            <p style="margin-top: 20px;">Repo Name:</p>
+            <div class="input-group mb-3">
+              <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon3">github.com/transparent-enclave/</span>
+              </div>
+              <input type="text" class="form-control" id="remove_collabRepo" aria-describedby="basic-addon3">
+            </div>
+            <p style="margin-top: 20px;">Collaborator Username:</p>
+            <input type="text" class="form-control" id="remove_collabUser" aria-describedby="basic-addon3">
+            <button type="button" class="btn btn-primary" style="margin-top: 30px;" onclick="DeleteCollaborator_Pressed()">Remove Collaborator</button>
+          </div>
+        </div>
+        <div id="Loading" style="margin-top: 40px; display: none">
+          <div class="row">
+            <div class="col text-center">
+              <h1>Loading ...</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div class="modal fade" id="reposModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle">Modal title</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="modalContent">Modal Content
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Dismiss</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+  </html>

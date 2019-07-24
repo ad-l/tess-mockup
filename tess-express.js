@@ -34,7 +34,7 @@ const EP_PROTECT_RELEASE_BRANCH = "/repos/:owner/:repo/branches/release/protecti
 const WEBHOOK_PATH = "/webhooks";
 const EP_COMMIT = "/repos/:owner/:repo/git/commits";
 const EP_CREATE_BRANCH = "/repos/:owner/:repo/git/refs";
-const WEBHOOK_ADDRESS = "http://tess.westeurope.cloudapp.azure.com/webhooks";
+const WEBHOOK_ADDRESS = "http://tess.westeurope.cloudapp.azure.com:8000/webhooks";
 
 // Collaborator operations
 const EP_ADD_COLLAB = "/repos/:owner/:repo/collaborators/:username";
@@ -88,7 +88,10 @@ app.post(EP_CREATE_REPO, function (req, res) {
 		},
         json: true,
         // autoinit should be true to create a commit to get a sha1 hash to be used for creating a branch later
-		body: req.body,
+		body: {
+			"name": req.body.name,
+			"auto_init": true
+		},
 	},
 	// Handle Github response
 	function(error, response, body){
@@ -185,6 +188,7 @@ app.post(EP_CREATE_REPO, function (req, res) {
 														],
 														"config": {
 														  "url": WEBHOOK_ADDRESS,
+														  "secret": GITHUB_WEBHOOK_SECRET,
 														  "content_type": "json",
 														  "insecure_ssl": "0"
 														}
@@ -739,7 +743,7 @@ function MergePullRequest (mergeEndpointURL, branchName) {
 function RunBuild (info, reviews) {
   console.log(reviews);
   var commentURL = info.issue_url + "/comments";
-  exec("./run_build.sh "+info.head.repo.clone_url+" "+info.head.ref+" "+info.head.sha,
+  exec("./run_build.sh "+info.head.repo.name+" "+info.head.repo.clone_url+" "+info.head.ref+" "+info.head.sha,
     {cwd:"/home/tess"},
     function(err, stdo, stde){
       if(err) {
@@ -776,5 +780,7 @@ function checkMAC(req) {
 	}
 	return true;
 }
+
+app.use('/portal', express.static('public'));
 
 app.listen({host:"0.0.0.0",port:port}, () => console.log(`Listening on port ${port}!`));
