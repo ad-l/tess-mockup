@@ -76,6 +76,9 @@ app.post(EP_CREATE_REPO, function (req, res) {
                 console.log("Repo successfully created.");
                 console.log("Github response:")
 				console.log("full_name: " + body.full_name);
+
+				// Store Github response
+				repositories[body.full_name] = body;
                 request.get({
                     url: "https://api.github.com" + EP_MASTER_COMMIT.replace(":owner/:repo", body.full_name),
                     headers: {
@@ -254,6 +257,74 @@ app.patch(EP_EDIT_REPO, function (req, res) {
         });
 })
 
+app.put(EP_ADD_COLLAB, function (req, res) {
+    console.log(req);
+    console.log("Add collaborator request received. Owner: " + req.params.owner + ", repo: " + req.params.repo +
+                ", username: " + req.params.username);
+    console.log("Body: ");
+    console.log(req.body);
+    request.put({
+        url: "https://api.github.com" + EP_ADD_COLLAB.replace(":owner", req.params.owner).replace(":repo", req.params.repo)
+                                                    .replace(":username", req.params.username),
+        headers: {
+            "Authorization": "token " + GITHUB_USER_TOKEN,
+            "User-Agent": GITHUB_USER_AGENT,
+            "content-type": "application/json"
+        },
+    },
+        // Handle Github response
+        function (error, response, body) {
+            if (error) {
+                console.log("Error occured:");
+                console.log(error);
+                res.send(body);
+            } else {
+                console.log("Status code: " + response.statusCode);
+                if (response.statusCode == 201) {
+                    console.log("Successfully added collaborator.");
+                    res.send(body);
+                } else if (response.statusCode == 204) {
+                    console.log("Already a collaborator.");
+                    res.send(body);
+                }
+                console.log("Github response body:")
+                console.log(body);
+            }
+        });
+})
+
+app.delete(EP_REMOVE_COLLAB, function (req, res) {
+    console.log(req);
+    console.log("Remove collaborator request received. Owner: " + req.params.owner + ", repo: " + req.params.repo +
+                ", username: " + req.params.username);
+    console.log("Body: ");
+    console.log(req.body);
+    request.delete({
+        url: "https://api.github.com" + EP_REMOVE_COLLAB.replace(":owner", req.params.owner).replace(":repo", req.params.repo)
+                                                    .replace(":username", req.params.username),
+        headers: {
+            "Authorization": "token " + GITHUB_USER_TOKEN,
+            "User-Agent": GITHUB_USER_AGENT,
+            "content-type": "application/json"
+        },
+    },
+        // Handle Github response
+        function (error, response, body) {
+            if (error) {
+                console.log("Error occured:");
+                console.log(error);
+                res.send(body);
+            } else {
+                console.log("Status code: " + response.statusCode);
+                if (response.statusCode == 204) {
+                    console.log("Collaborator deleted.");
+                    res.send(body);
+                }
+                console.log("Github response body:")
+                console.log(body);
+            }
+        });
+})
 
 
 
