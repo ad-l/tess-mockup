@@ -34,10 +34,7 @@ const EP_PROTECT_RELEASE_BRANCH = "/repos/:owner/:repo/branches/release/protecti
 const WEBHOOK_PATH = "/webhooks";
 const EP_COMMIT = "/repos/:owner/:repo/git/commits";
 const EP_CREATE_BRANCH = "/repos/:owner/:repo/git/refs";
-// For now, we are using localhost
 const WEBHOOK_ADDRESS = "http://tess.westeurope.cloudapp.azure.com/webhooks";
-const WEBHOOK_PULL = "/webhooks/pull";
-const WEBHOOK_NEWREVIEW = "/webhooks/review";
 
 // Collaborator operations
 const EP_ADD_COLLAB = "/repos/:owner/:repo/collaborators/:username";
@@ -377,17 +374,7 @@ function new_pull_request(req, res)
 			var pullReqCommits = JSON.parse(body);
 			// loop through the commits on this pull request
 			for (var i = 0; i < pullReqCommits.length; i++) {
-				/*
-				var isVerified = commits[i].commit.verified;
-				if (!isVerified) {
-					// commit not signed
-					res.write("Commit not signed! Ignoring this pull request.");
-					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. All of the commits should have been signed");
-					ClosePullRequest(issueEndpointURL);
-					res.end();
-					return;
-				}
-				*/
+
 				var signature = pullReqCommits[i].commit.signature;
 
 				// check the commit signature
@@ -626,7 +613,7 @@ function new_push(req, res) {
 				if (pullRequests[i].state != "open") {
 					continue;
 				}
-				if (pullRequests[i].false == "true") {
+				if (pullRequests[i].locked == "true") {
 					continue;
 				}
 
