@@ -512,7 +512,10 @@ function new_review_request(req, res) {
 					"timestamp": timeStamp,
 				});
 
-				commits = pullReqCommits;
+				// add new commits to commits table
+				for (var i = 0; i < pullReqCommits.length; i++) {
+					commits.append(pullReqCommits[i]);
+				}
 			});
 
 			res.write(response);
