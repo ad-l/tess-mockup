@@ -88,7 +88,10 @@ app.post(EP_CREATE_REPO, function (req, res) {
 		},
         json: true,
         // autoinit should be true to create a commit to get a sha1 hash to be used for creating a branch later
-		body: req.body,
+		body: {
+			"name": body.name,
+			"auto_init": true
+		},
 	},
 	// Handle Github response
 	function(error, response, body){
