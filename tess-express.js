@@ -34,7 +34,7 @@ const EP_PROTECT_RELEASE_BRANCH = "/repos/:owner/:repo/branches/release/protecti
 const WEBHOOK_PATH = "/webhooks";
 const EP_COMMIT = "/repos/:owner/:repo/git/commits";
 const EP_CREATE_BRANCH = "/repos/:owner/:repo/git/refs";
-const WEBHOOK_ADDRESS = "http://tess.westeurope.cloudapp.azure.com/webhooks";
+const WEBHOOK_ADDRESS = "http://tess.westeurope.cloudapp.azure.com:8000/webhooks";
 
 // Collaborator operations
 const EP_ADD_COLLAB = "/repos/:owner/:repo/collaborators/:username";
