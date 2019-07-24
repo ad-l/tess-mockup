@@ -466,10 +466,12 @@ function new_review_request(req, res) {
 		}
 
 		var reviewArr = JSON.parse(body);
+    console.log("Missing: "+missing.length+", submitted: "+reviewArr.length);
     var approved = (missing.length == 0 && reviewArr.length > 0);
 
 		// look through all the reviews
 		for (var i = 0; i < reviewArr.length; i++) {
+      console.log("Review "+i+": "+reviewArr[i].state+" "+(reviewArr[i].commit_id == pullRequestLatestCommitId ? "up to date" : "outdated"));
       approved = (approved
          && reviewArr[i].state == "APPROVED"
          && reviewArr[i].commit_id == pullRequestLatestCommitId);
