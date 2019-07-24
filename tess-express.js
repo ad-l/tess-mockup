@@ -305,7 +305,7 @@ function new_pull_request(req, res)
 			var pullReqCommits = JSON.parse(body);
 			// loop through the commits on this pull request
 			for (var i = 0; i < pullReqCommits.length; i++) {
-/*
+				/*
 				var isVerified = commits[i].commit.verified;
 				if (!isVerified) {
 					// commit not signed
@@ -315,7 +315,7 @@ function new_pull_request(req, res)
 					res.end();
 					return;
 				}
-*/
+				*/
 				var signature = pullReqCommits[i].commit.signature;
 
 				// check the commit signature
@@ -521,6 +521,37 @@ function new_review_request(req, res) {
 	);
 }
 
+/* Called when a push is made */
+function new_push(req, res) {
+
+	var jsonBody = JSON.parse(req.body);
+	var ref = jsonBody.ref;
+
+	if (ref.substring(0, 10) != "ref/heads/") {
+		res.write("This isn't a push to a branch.");
+		res.end();
+		return;
+	}
+
+	var branchName = ref.substring(10, ref.length);
+
+	if (jsonBody.commits.length == 0) {
+		res.write("No commits in this push.");
+		res.end();
+		return;
+	}
+
+	// check pull request exists for this branch
+
+	// check the PR is valid
+
+	// check new commits are signed
+
+	// build
+
+	// add comment to PR with build hash
+}
+
 app.post(WEBHOOK_PATH, function (req, res) {
   if(!checkMAC(req)) {
 		res.write("Invalid Webhook MAC.");
@@ -533,6 +564,9 @@ app.post(WEBHOOK_PATH, function (req, res) {
 			break;
 		case "pull_request_review":
 		  new_review_request(req, res);
+		    break;
+		case "push":
+		  new_push(req, res);
 		    break;
 		default:
 		  console.log("Ignoring event of type "+req.headers["x-github-event"])
