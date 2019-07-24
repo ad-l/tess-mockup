@@ -501,29 +501,18 @@ function new_review_request(req, res) {
         console.log(err);
         return;
       }
-      console.dir(body);
-      /*
-      // If build succeeds, need to add hash to PR as comment
-      AddCommentToPR(issueCommentEndpointURL, "Build Hash: xxx");
-      // Then merge
-      var mergeURL = jsonBody.pull_request.issue_url + "/lock";
-      var branchName = jsonBody.pull_request.head.ref;
-      MergePullRequest(mergeURL, branchName);
 
-      var timeStamp = Math.floor(Date.now() / 1000);
-      releases.append({
-        "repository": jsonBody.repo.full_name,
-        "pull_request_number": jsonBody.pull_request.number,
-        "timestamp": timeStamp,
-      });
-
-      // add new commits to commits table
-      for (var i = 0; i < pullReqCommits.length; i++) {
-        commits.append(pullReqCommits[i]);
+      var pr = JSON.parse(body);
+      if(pr.mergeable)
+      {
+        AddCommentToPR(issueCommentEndpointURL, "Merge is approved, starting a new signing build.");
+        RunBuild(pr);
       }
-      // Send request to build
-      RunBuild(jsonBody.pull_request);
-      */
+      else
+      {
+        AddCommentToPR(issueCommentEndpointURL, "Merge is approved, but it is not in a mergeable state. Please rebase.");
+        SetBuildStatus(pr.statuses_url, "error");
+      }
     });
 	});
   res.write("New review processed.");
@@ -749,6 +738,7 @@ function MergePullRequest (mergeEndpointURL, branchName) {
 
 function RunBuild (info) {
   console.dir(info);
+  SetBuildStatus(info.statuses_url, "success");
 	return "Not Implemented";
 }
 
