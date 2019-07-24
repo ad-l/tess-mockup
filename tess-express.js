@@ -35,7 +35,7 @@ const WEBHOOK_PATH = "/webhooks";
 const EP_COMMIT = "/repos/:owner/:repo/git/commits";
 const EP_CREATE_BRANCH = "/repos/:owner/:repo/git/refs";
 // For now, we are using localhost
-const WEBHOOK_ADDRESS = "http://localhost:" + port + WEBHOOK_PATH;
+const WEBHOOK_ADDRESS = "https://tess.westeurope.cloudapp.azure.com/webhooks";
 const WEBHOOK_PULL = "/webhooks/pull";
 const WEBHOOK_NEWREVIEW = "/webhooks/review";
 
