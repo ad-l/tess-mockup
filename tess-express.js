@@ -435,6 +435,7 @@ function new_review_request(req, res) {
 	var reviewCommitId = jsonBody.review.commit_id;
 	var pullRequestLatestCommitId = jsonBody.pull_request.head.sha;
 	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
+  var issueCommentEndpointURL = jsonBody.pull_request.issue_url + "/comments";
 
 	// don't check the 'action' because we want to consider all three: 'submitted', 'edited', 'dismissed'
 
@@ -445,36 +446,10 @@ function new_review_request(req, res) {
 		return;
 	}
 
-	// Check the pull request has some required reviewers
-	if (jsonBody.pull_request.requested_reviewers.length == 0) {
-		res.write("PR needs to have some required reviews. Ingoring this PR.");
-		AddCommentToPR(issueCommentEndpointURL, "This PR has been setup incorrectly so will be ignored. It needs to have at least 1 reviewer.");
-		ClosePullRequest(issueEndpointURL);
-		res.end();
-		return;
-	}
-
-	// check the review state
-	if (jsonBody.review.state != "approved") {
-		res.write("PR has not been approved with this review so wait for more commits.");
-		res.end();
-		return;
-	}
-
-	// Check review is for latest commit
-	if (reviewCommitId != pullRequestLatestCommitId) {
-		res.write("Review does not cover the latest commit(s). Ignoring review.");
-		res.end();
-		return;
-	}
-
 	// Get all reviews
-	var allReviewsURL = jsonBody.review.pull_request_url + "/reviews";
-	// e.g. https://api.github.com/repos/Codertocat/Hello-World/pulls/2/reviews
-
   console.log("Checking other reviews.");
 	request.get({
-		url: allReviewsURL,
+		url: jsonBody.review.pull_request_url + "/reviews",
 		headers: {
 			"Authorization": "token "+ GITHUB_USER_TOKEN,
 			"User-Agent": GITHUB_USER_AGENT,
@@ -489,11 +464,9 @@ function new_review_request(req, res) {
 			res.end();
 			return;
 		}
-    console.log("Reviews response:")
-    console.log(body);
 
 		var reviewArr = JSON.parse(body);
-    var approved = (missing.length == 0);
+    var approved = (missing.length == 0 && reviewArr.length > 0);
 
 		// look through all the reviews
 		for (var i = 0; i < reviewArr.length; i++) {
