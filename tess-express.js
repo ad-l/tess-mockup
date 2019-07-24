@@ -506,7 +506,7 @@ function new_review_request(req, res) {
       if(pr.mergeable)
       {
         AddCommentToPR(issueCommentEndpointURL, "Merge is approved, starting a new signing build.");
-        RunBuild(pr);
+        RunBuild(pr,reviewArr);
       }
       else
       {
@@ -736,10 +736,22 @@ function MergePullRequest (mergeEndpointURL, branchName) {
 
 }
 
-function RunBuild (info) {
-  console.dir(info);
-  SetBuildStatus(info.statuses_url, "success");
-	return "Not Implemented";
+function RunBuild (info, reviews) {
+  console.log(reviews);
+  var commentURL = info.issue_url + "/comments";
+  exec("run_build.sh "+info.head.repo.clone_url+" "+info.head.ref+" "+info.head.sha,
+    function(err, stdo, stde){
+      if(err) {
+        AddCommentToPR(commentURL, "TESS failed to build your changes.")
+        SetBuildStatus(info.statuses_url, "error");
+        return;
+      }
+      console.log("Finished build.");
+      console.log("STDOUT: "+stdo);
+      console.log("STDERR: "+stde);
+      AddCommentToPR(commentURL, "TESS build completed. Build output:\n```\n"+stdo+"\n```\nError output:\n```\n"+stde+"```\n")
+      SetBuildStatus(info.statuses_url, "success");
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
