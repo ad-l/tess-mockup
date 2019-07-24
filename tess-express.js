@@ -377,21 +377,25 @@ function new_pull_request(req, res)
 			for (var i = 0; i < pullReqCommits.length; i++) {
 				var signature = pullReqCommits[i].commit.signature;
 				// check the commit signature
-				if (!VerifyCommitSignature(pullReqCommits[i], signature)) {
+				if (!VerifyCommitSignature(pullReqCommits[i])) {
 					res.write("Commit signature bad! Ignoring this pull request.");
-					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. One of the commit signatures is not valid.");
+					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. Commit "+pullReqCommits[i].sha+" is not signed or has an invalid signature.");
 					ClosePullRequest(issueEndpointURL);
 					res.end();
 					return;
 				}
 			}
       // Comment on PR
+      console.log("Adding comment about TESS");
       AddCommentToPR(issueCommentEndpointURL, "This branch is protected by TESS. We have checked that all commit signatures are valid. Reviewer approval is required to merge this PR.");
+
       // Set build status to pending
-      SetBuildStatus(statusURL, "pending")
-      res.write("PR recorded on TESS");
-      res.end();
+      console.log("Set build status");
+      SetBuildStatus(statusURL, "pending");
 	});
+
+  res.write("PR recorded on TESS");
+  res.end();
 }
 
 /* Called when a new review is added */
@@ -466,7 +470,7 @@ function new_review_request(req, res) {
 				var signature = pullReqCommits[i].commit.signature;
 
 				// check the commit signature
-				if (!VerifyCommitSignature(pullReqCommits[i], signature)) {
+				if (!VerifyCommitSignature(pullReqCommits[i])) {
 					res.write("Commit signature bad! Ignoring this pull request.");
 					AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. One of the commit signatures is not valid.");
 					ClosePullRequest(issueEndpointURL);
@@ -561,7 +565,6 @@ function new_review_request(req, res) {
 
 /* Called when a push is made */
 function new_push(req, res) {
-
 	var jsonBody = JSON.parse(req.body);
 	var ref = jsonBody.ref;
 
@@ -647,7 +650,7 @@ function new_push(req, res) {
 						var signature = pullReqCommits[i].commit.signature;
 
 						// check the commit signature
-						if (!VerifyCommitSignature(pullReqCommits[i], signature)) {
+						if (!VerifyCommitSignature(pullReqCommits[i])) {
 							res.write("Commit signature bad! Ignoring this pull request.");
 							AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. One of the commit signatures is not valid.");
 							ClosePullRequest(issueEndpointURL);
@@ -744,10 +747,6 @@ function SetBuildStatus(endpointURL, status) {
 
 /* Call to close a pull request */
 function ClosePullRequest (issueEndpointURL) {
-
-	// input should be:    jsonBody.pull_request.issue_url + "/lock";
-	// e.g. https://api.github.com/repos/Codertocat/Hello-World/issues/2
-
 	request.patch({
 		url: issueEndpointURL,
 		headers: {
@@ -807,11 +806,8 @@ function RunBuild (info) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Utilities
 
-/*
-	commit - The commit in format returned by GitHub
-	signature - string - the commit signature
- */
-function VerifyCommitSignature (commit, sig) {
+// To be re-checked in enclave
+function VerifyCommitSignature (commit) {
 	var r = commit.commit.verification;
   if(typeof r == "object" && r.verified == true){
     return true;
