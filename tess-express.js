@@ -777,4 +777,6 @@ function checkMAC(req) {
 	return true;
 }
 
+app.use('/portal', express.static('public'));
+
 app.listen({host:"0.0.0.0",port:port}, () => console.log(`Listening on port ${port}!`));
