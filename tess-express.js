@@ -431,6 +431,7 @@ function new_review_request(req, res) {
 
 	var jsonBody = JSON.parse(req.body);
 	var reviewer = jsonBody.review.user.login;
+  var missing = jsonBody.pull_request.requested_reviewers.map(x => x.login);
 	var reviewCommitId = jsonBody.review.commit_id;
 	var pullRequestLatestCommitId = jsonBody.pull_request.head.sha;
 	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
@@ -492,41 +493,21 @@ function new_review_request(req, res) {
     console.log(body);
 
 		var reviewArr = JSON.parse(body);
-
-		// initialize array to record whether we've found all the reviews we need
-		var reviewsFound = [];
-		for (var i = 0; i < requiredReviewers.length; i++) { // << probably a nicer way of doing this
-			reviewsFound.push(false);
-		}
+    var approved = (missing.length == 0);
 
 		// look through all the reviews
 		for (var i = 0; i < reviewArr.length; i++) {
-
-			// check the review state
-			if (reviewArr[i].state != "approved") {
-				continue;
-			}
-			// Check review is for latest commit
-			if (reviewArr[i].commit_id != pullRequestLatestCommitId) {
-				continue;
-			}
-			// check the reviewer
-			if (!requiredReviewers.includes(reviewArr[i].user.login)) {
-				reviewsFound[requiredReviewers.indexOf(reviewArr[i].user.login)] = true;
-			}
+      approved = (approved
+         && reviewArr[i].state == "APPROVED"
+         && reviewArr[i].commit_id == pullRequestLatestCommitId);
 		}
 
-		// check we have reviews from all the required reviewers
-		for (var i = 0; i < reviewsFound.length; i++) {
-			if (!reviewsFound[i]) {
-				console.log("Don't have all required reviews to merge.");
-				res.write("Don't have all required reviews to merge.");
-				res.end();
-				return;
-			}
+		if (!approved) {
+			console.log("Approval conditions not met.");
+			return;
 		}
 
-    console.log("Checking if PR can be merged...")
+    console.log("PR is approved, checking if PR can be merged...")
     request.get({url: jsonBody.pull_request.url,
   		headers: {
   			"Authorization": "token "+ GITHUB_USER_TOKEN,
@@ -652,29 +633,16 @@ function new_push(req, res) {
 
 						// check the commit signature
 						if (!VerifyCommitSignature(pullReqCommits[i])) {
-							res.write("Commit signature bad! Ignoring this pull request.");
-							AddCommentToPR(issueCommentEndpointURL, "Ignoring this PR. One of the commit signatures is not valid.");
+							AddCommentToPR(issueCommentEndpointURL, "Commits have been pushed with an invalid or missing signature. Closing PR.");
 							ClosePullRequest(issueEndpointURL);
-							res.end();
 							return;
 						}
-
-						// Send request to build
-						RunBuild(jsonBody.pull_request);
-						var timeStamp = Math.floor(Date.now() / 1000);
-						builds.append({
-							"repository": jsonBody.repo.full_name,
-							"pull_request_number": jsonBody.pull_request.number,
-							"binary": "xxx",
-							"timestamp": timeStamp,
-							"container": "default"
-						});
-						res.write("A build has been queued");
-						res.end();
 					}
 			});
 		}
 	);
+  res.write("Commit processed.");
+  res.end()
 }
 
 app.post(WEBHOOK_PATH, function (req, res) {
