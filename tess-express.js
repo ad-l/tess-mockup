@@ -537,6 +537,9 @@ function new_push(req, res) {
 	}
 
 	var branchName = ref.substring(10, ref.length);
+	var repoName = jsonBody.repository.full_name;
+	var pullRequestUrl = "https://api.github.com/repos/" + repoName + "/pulls";
+	// e.g. https://api.github.com/repos/microsoft/vscode/pulls
 
 	if (jsonBody.commits.length == 0) {
 		res.write("No commits in this push.");
@@ -544,15 +547,53 @@ function new_push(req, res) {
 		return;
 	}
 
-	// check pull request exists for this branch
+	// get pull requests to check one exists for this branch
+	var cli = https(pullRequestUrl,
+		{
+			"headers": {
+				"Authorization": "token " + GITHUB_USER_TOKEN,
+				"User-Agent": GITHUB_USER_AGENT,
+				"content-type": "application/json"
+			}
+		},
+		(err, gres, body) => {
+			var pullRequests = JSON.parse(body);
+			var foundPRForBranch = false;
+			var pullRequest;
+			for (var i = 0; i < pullRequests.length; i++) {
+				if (pullRequests[i].state != "open") {
+					continue;
+				}
+				if (pullRequests[i].false == "true") {
+					continue;
+				}
 
-	// check the PR is valid
+				if (pullRequests[i].base.ref != "release") {
+					continue;
+				}
 
-	// check new commits are signed
+				if (pullRequests[i].head.ref == branchName) {
+					foundPRForBranch = true;
+					pullRequest = pullRequests[i];
+				}
+			}
 
-	// build
+			if (!foundPRForBranch) {
+				res.write("Push does not add to a PR.");
+				res.end();
+				return;
+			}
 
-	// add comment to PR with build hash
+			// check the PR is valid
+
+			// check new commits are signed
+
+			// build
+
+			// add comment to PR with build hash
+			
+		}
+	);
 }
 
 app.post(WEBHOOK_PATH, function (req, res) {
