@@ -76,6 +76,9 @@ app.post(EP_CREATE_REPO, function (req, res) {
                 console.log("Repo successfully created.");
                 console.log("Github response:")
 				console.log("full_name: " + body.full_name);
+
+				// Store Github response
+				repositories[body.full_name] = body;
                 request.get({
                     url: "https://api.github.com" + EP_MASTER_COMMIT.replace(":owner/:repo", body.full_name),
                     headers: {
@@ -253,8 +256,6 @@ app.patch(EP_EDIT_REPO, function (req, res) {
             }
         });
 })
-
-
 
 
 
