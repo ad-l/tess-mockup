@@ -432,6 +432,7 @@ function new_review_request(req, res) {
 	var jsonBody = JSON.parse(req.body);
 
 	var requiredReviewers = jsonBody.pull_request.requested_reviewers.map(x => x.login);
+  console.log(requiredReviewers);
 	var reviewer = jsonBody.review.user.login;
 	var reviewCommitId = jsonBody.review.commit_id;
 	var pullRequestLatestCommitId = jsonBody.pull_request.head.sha;
