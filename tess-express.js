@@ -482,7 +482,7 @@ function new_review_request(req, res) {
 	},
 	// Handle Github response
 	(err, gres, body) => {
-		if (error) {
+		if (err) {
 			console.log("Something went wrong getting the reviews.");
 			res.write("Something went wrong getting the reviews.");
 			res.end();
@@ -490,7 +490,7 @@ function new_review_request(req, res) {
 		}
     console.log("Reviews response:")
     console.log(body);
-    
+
 		var reviewArr = JSON.parse(body);
 
 		// initialize array to record whether we've found all the reviews we need
