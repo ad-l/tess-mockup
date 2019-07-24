@@ -739,7 +739,7 @@ function MergePullRequest (mergeEndpointURL, branchName) {
 function RunBuild (info, reviews) {
   console.log(reviews);
   var commentURL = info.issue_url + "/comments";
-  exec("run_build.sh "+info.head.repo.clone_url+" "+info.head.ref+" "+info.head.sha,
+  exec("./run_build.sh "+info.head.repo.clone_url+" "+info.head.ref+" "+info.head.sha,
     {cwd:"/home/tess"},
     function(err, stdo, stde){
       if(err) {
