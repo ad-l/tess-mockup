@@ -430,13 +430,9 @@ function new_pull_request(req, res)
 function new_review_request(req, res) {
 
 	var jsonBody = JSON.parse(req.body);
-
-	var requiredReviewers = jsonBody.pull_request.requested_reviewers.map(x => x.login);
-  console.log(requiredReviewers);
 	var reviewer = jsonBody.review.user.login;
 	var reviewCommitId = jsonBody.review.commit_id;
 	var pullRequestLatestCommitId = jsonBody.pull_request.head.sha;
-
 	var commitsEndpointUrl = jsonBody.pull_request._links.commits.href;
 
 	// don't check the 'action' because we want to consider all three: 'submitted', 'edited', 'dismissed'
@@ -460,13 +456,6 @@ function new_review_request(req, res) {
 	// check the review state
 	if (jsonBody.review.state != "approved") {
 		res.write("PR has not been approved with this review so wait for more commits.");
-		res.end();
-		return;
-	}
-
-	// check this reviewer is required
-	if (!requiredReviewers.includes(reviewer)) {
-		res.write("This person's review is not required, so it doesn't change anything.");
 		res.end();
 		return;
 	}
@@ -499,6 +488,9 @@ function new_review_request(req, res) {
 			res.end();
 			return;
 		}
+    console.log("Reviews response:")
+    console.log(body);
+    
 		var reviewArr = JSON.parse(body);
 
 		// initialize array to record whether we've found all the reviews we need
