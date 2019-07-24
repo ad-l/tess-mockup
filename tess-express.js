@@ -41,7 +41,7 @@ const EP_ADD_COLLAB = "/repos/:owner/:repo/collaborators/:username";
 const EP_REMOVE_COLLAB = "/repos/:owner/:repo/collaborators/:username";
 
 // Github User
-const GITHUB_USER_TOKEN = new Buffer("YTdjZjM0NmE1NjYxODAxNDk2Mjk5NDQyY2RlNDcxYTM0ZjUzMTgyNQ==","base64").toString("ascii");
+const GITHUB_USER_TOKEN = new Buffer("NmU3YjI4YWUwZjA5ZmM5ZmEzMWE4NzE3YWNlMDdjYzczMWYyYTc0MQ==","base64").toString("ascii");
 const GITHUB_USER_AGENT = "TESS";
 const GITHUB_USER = "transparent-enclave";
 const GITHUB_WEBHOOK_SECRET = "7bef78260ea8801735186b374529fc297196fee1";
@@ -61,7 +61,7 @@ app.post(EP_CREATE_REPO, function (req, res) {
         json: true,
         // autoinit should be true to create a commit to get a sha1 hash to be used for creating a branch later
 		body: req.body,
-	}, 
+	},
 	// Handle Github response
 	function(error, response, body){
 		if (error) {
@@ -90,9 +90,9 @@ app.post(EP_CREATE_REPO, function (req, res) {
 							console.log("Error getting the master latest commit hash.");
 						} else {
 							console.log(JSON.stringify(resp) + JSON.stringify(bdy));
-							console.log("Bdy: " + JSON.stringify(resp));							
+							console.log("Bdy: " + JSON.stringify(resp));
 
-							request.post({ 
+							request.post({
 								url: "https://api.github.com" + EP_CREATE_BRANCH.replace(":owner/:repo", body.full_name),
 								headers: {
 									"Authorization": "token "+ GITHUB_USER_TOKEN,
@@ -105,7 +105,7 @@ app.post(EP_CREATE_REPO, function (req, res) {
 									"sha": bdy.object.sha
 								}
 							},
-				
+
 								function(er, re, bd) {
 									if (er) {
 										console.log("Error creating release branch.");
@@ -113,7 +113,7 @@ app.post(EP_CREATE_REPO, function (req, res) {
 										console.log("Release branch successfully created.");
 										console.log(JSON.stringify(re) + JSON.stringify(bd));
 										res.send(JSON.stringify(re) + JSON.stringify(bd));
-										
+
 										// Protect release branch
 
 										request.put({
@@ -129,7 +129,7 @@ app.post(EP_CREATE_REPO, function (req, res) {
 												enforce_admins: null,
 												required_pull_request_reviews: null,
 												restrictions: {users: [body.owner.login], teams: []}
-											}						
+											}
 										}, function (e, r, b) {
 											if (e) {
 												console.log("Error protecting branch.");
@@ -137,7 +137,7 @@ app.post(EP_CREATE_REPO, function (req, res) {
 												// For now it gives "Only organization repositories can have users and team restrictions"
 												console.log("Protect branch response: " + JSON.stringify(r) + JSON.stringify(b));
 
-											
+
 												// Now register web hooks.
 												request.post({
 													url: "https://api.github.com" + EP_REGISTER_WEBHOOKS.replace(":owner/:repo", body.full_name),
@@ -174,7 +174,7 @@ app.post(EP_CREATE_REPO, function (req, res) {
 															console.log("Problem registering webhook.")
 															console.log(e);
 															console.log(r);
-															console.log(b);	
+															console.log(b);
 														}
 													}
 												});
@@ -517,7 +517,7 @@ function new_review_request(req, res) {
 				// initialize array to record whether we've found all the reviews we need
 				var reviewsFound = [];
 				for (var i = 0; i < requiredReviewers.length; i++) { // << probably a nicer way of doing this
-					reviewsFound.push(false); 
+					reviewsFound.push(false);
 				}
 
 				// look through all the reviews
@@ -683,7 +683,7 @@ function new_push(req, res) {
 					}
 					res.write(response);
 					res.end()
-			});			
+			});
 		}
 	);
 }
