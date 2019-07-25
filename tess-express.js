@@ -35,6 +35,7 @@ const WEBHOOK_PATH = "/webhooks";
 const EP_COMMIT = "/repos/:owner/:repo/git/commits";
 const EP_CREATE_BRANCH = "/repos/:owner/:repo/git/refs";
 const WEBHOOK_ADDRESS = "http://tess.westeurope.cloudapp.azure.com:8000/webhooks";
+const CCF_CLIENT_PATH = "";
 
 // Collaborator operations
 const EP_ADD_COLLAB = "/repos/:owner/:repo/collaborators/:username";
@@ -202,6 +203,19 @@ app.post(EP_CREATE_REPO, function (req, res) {
 													} else {
 														if (r.statusCode == 201) {
 															console.log("Webhooks are successfully registered. Webhook addres is " + WEBHOOK_ADDRESS);
+															
+															// // Send the newly created repo's path to CCF for recording.
+															// exec("./client " + '--pretty-print userrpc --req "{"jsonrpc": "2.0", "id": 0, "method": "RECORD_NEW_REPOSITORY", "params": {"path": "repos/' + body.full_name + "}}",
+															// 	{ cwd: CCF_CLIENT_PATH },
+															// 	function (err, stdo, stde) {
+															// 		if (err) {
+															// 			console.log("Error occured while recording the repo in CCF.")
+															// 			return;
+															// 		}
+															// 		console.log("Returned from CCF: ");
+															// 		console.log(stdo)
+															// 		console.log(stde);
+															// 	});
 														} else {
 															console.log("Problem registering webhook.")
 															console.log(e);
